@@ -2,6 +2,18 @@
 import admin from "../config/firebaseAdmin.js";
 import prisma from "../../prisma/client.js";
 import { generateToken } from "../utils/generateToken.js";
+import { clearAuthCookies } from "../utils/sessionHelpers.js";
+
+const extractIdToken = (req) => {
+  // Body token
+  if (req.body && req.body.idToken) return req.body.idToken;
+  // Authorization: Bearer <token>
+  const header = req.headers.authorization;
+  if (header && header.startsWith("Bearer ")) return header.split(" ")[1];
+  // x-id-token header fallback
+  if (req.headers["x-id-token"]) return req.headers["x-id-token"];
+  return null;
+};
 
 
 
@@ -17,7 +29,7 @@ import { generateToken } from "../utils/generateToken.js";
  */
 export const firebaseAuth = async (req, res) => {
   try {
-    const { idToken } = req.body;
+    const idToken = extractIdToken(req);
 
     if (!idToken) {
       return res.status(400).json({ message: "idToken is required" });
@@ -130,5 +142,22 @@ export const firebaseAuth = async (req, res) => {
     return res
       .status(401)
       .json({ message: "Invalid Firebase token", error: err.message });
+  }
+};
+
+/**
+ * POST /auth/logout
+ * Stateless logout (front-end should drop tokens). If a session exists, destroy it.
+ */
+export const logout = async (req, res) => {
+  try {
+    if (req.session) {
+      req.session.destroy(() => {});
+    }
+    clearAuthCookies(res);
+    return res.json({ message: "Logged out" });
+  } catch (err) {
+    console.error("Logout error:", err);
+    return res.status(500).json({ message: "Logout failed" });
   }
 };

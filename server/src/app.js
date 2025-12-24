@@ -14,7 +14,7 @@ app.use(express.json());
 app.use(morgan("dev"));
 
 // API routes
-app.use("/auth", authRoutes);
+app.use("/api/auth", authRoutes);
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });

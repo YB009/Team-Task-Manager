@@ -6,6 +6,6 @@ import axios from "./axiosInstance";
  * backend will verify it and respond with our app JWT + user.
  */
 export const loginWithFirebase = async (idToken) => {
-  const res = await axios.post("/auth/firebase", { idToken });
+  const res = await axios.post("/api/auth/firebase", { idToken });
   return res.data; // { token, user }
 };
