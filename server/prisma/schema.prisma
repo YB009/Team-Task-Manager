@@ -1,10 +1,16 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
 }
 
 model User {
@@ -12,11 +18,65 @@ model User {
   email       String   @unique
   name        String?
   provider    String
-  firebaseUid String?
+  firebaseUid String   @unique
   googleId    String?  @unique
   facebookId  String?  @unique
   githubId    String?  @unique
   twitterId   String?  @unique
+
+  projects    Project[]
+  tasks       Task[]
+  memberships Membership[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Organization {
+  id        String       @id @default(cuid())
+  name      String
+  members   Membership[]
+
+  createdAt DateTime     @default(now())
+}
+
+model Membership {
+  id             String        @id @default(cuid())
+  role           Role
+
+  userId         String
+  organizationId String
+
+  user           User          @relation(fields: [userId], references: [id])
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+
+  @@unique([userId, organizationId])
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  userId      String
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks       Task[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  status      String   @default("todo")
+  priority    String   @default("medium")
+  userId      String
+  projectId   String
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

@@ -3,6 +3,9 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import authRoutes from "./routes/authRoutes.js";
+import projectRoutes from "./routes/projectRoutes.js";
+import taskRoutes from "./routes/taskRoutes.js";
+import orgRoutes from "./routes/orgRoutes.js";
 
 const app = express();
 
@@ -15,6 +18,9 @@ app.use(morgan("dev"));
 
 // API routes
 app.use("/api/auth", authRoutes);
+app.use("/api/projects", projectRoutes);
+app.use("/api/tasks", taskRoutes);
+app.use("/api/orgs", orgRoutes);
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });

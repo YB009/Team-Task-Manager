@@ -1,30 +1,33 @@
-// server/src/middleware/authMiddleware.js
 import admin from "../config/firebaseAdmin.js";
 import prisma from "../../prisma/client.js";
 
 export const verifyAuth = async (req, res, next) => {
   try {
-    const idToken = req.headers.authorization?.split(" ")[1];
+    const authHeader = req.headers.authorization;
 
-    if (!idToken) return res.status(401).json({ message: "No token provided" });
+    if (!authHeader?.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Missing or invalid token" });
+    }
 
-    // 1. Verify Firebase token
+    const idToken = authHeader.split(" ")[1];
+
+    // Verify Firebase token
     const decoded = await admin.auth().verifyIdToken(idToken);
 
-    // 2. Find user in database
+    // Load user from DB
     const user = await prisma.user.findUnique({
       where: { firebaseUid: decoded.uid }
     });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found in database" });
+      return res.status(404).json({ message: "User not found" });
     }
 
     req.user = user;
     next();
 
-  } catch (err) {
-    console.error("AUTH ERROR:", err);
+  } catch (error) {
+    console.error("AUTH ERROR:", error);
     res.status(401).json({ message: "Unauthorized" });
   }
 };

@@ -1,6 +1,10 @@
 import express from "express";
 import session from "express-session";
 import authRoutes from "./src/routes/authRoutes.js";
+import projectRoutes from "./src/routes/projectRoutes.js";
+import taskRoutes from "./src/routes/taskRoutes.js";
+import orgRoutes from "./src/routes/orgRoutes.js";
+import billingRoutes from "./src/routes/billingRoutes.js";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
@@ -29,9 +33,20 @@ app.use(
   })
 );
 
-
+// Public auth routes
 app.use("/api/auth", authRoutes);
 
+// Protected routes (route-level middleware enforces auth)
+app.use("/api/projects", projectRoutes);
+app.use("/api/tasks", taskRoutes);
+app.use("/api/orgs", orgRoutes);
+app.use("/api/billing", billingRoutes);
+
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", message: "Server is running" });
+});
+
 app.listen(port, () => {
-  console.log("AUTH server running on port " + port);
+  console.log("API server running on port " + port);
 });
