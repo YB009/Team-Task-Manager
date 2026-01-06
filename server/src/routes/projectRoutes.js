@@ -4,7 +4,10 @@ import { requireOrgAccess } from "../middleware/orgMiddleware.js";
 import { requireRole } from "../middleware/roleMiddleware.js";
 import {
   createProject,
-  getOrgProjects
+  getOrgProjects,
+  grantProjectAccess,
+  revokeProjectAccess,
+  updateProject
 } from "../controllers/projectController.js";
 
 const router = express.Router();
@@ -22,6 +25,27 @@ router.get(
   "/org/:orgId",
   requireOrgAccess,
   getOrgProjects
+);
+
+router.put(
+  "/org/:orgId/projects/:projectId",
+  requireOrgAccess,
+  requireRole(["OWNER", "ADMIN"]),
+  updateProject
+);
+
+router.post(
+  "/org/:orgId/projects/:projectId/access",
+  requireOrgAccess,
+  requireRole(["OWNER", "ADMIN"]),
+  grantProjectAccess
+);
+
+router.delete(
+  "/org/:orgId/projects/:projectId/access/:userId",
+  requireOrgAccess,
+  requireRole(["OWNER", "ADMIN"]),
+  revokeProjectAccess
 );
 
 export default router;

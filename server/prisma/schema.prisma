@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -14,70 +13,121 @@ enum Role {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  email       String   @unique
+  id          String  @id @default(cuid())
+  email       String  @unique
   name        String?
   provider    String
-  firebaseUid String   @unique
-  googleId    String?  @unique
-  facebookId  String?  @unique
-  githubId    String?  @unique
-  twitterId   String?  @unique
+  firebaseUid String  @unique
+  googleId    String? @unique
+  facebookId  String? @unique
+  githubId    String? @unique
+  twitterId   String? @unique
 
-  projects    Project[]
-  tasks       Task[]
-  memberships Membership[]
+  projects       Project[]
+  tasks          Task[]
+  memberships    Membership[]
+  projectAccess  ProjectAccess[]
+  projectMembers ProjectMember[]
+  profile        Profile?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Organization {
-  id        String       @id @default(cuid())
-  name      String
-  members   Membership[]
+  id       String       @id @default(cuid())
+  name     String
+  members  Membership[]
+  projects Project[]
 
-  createdAt DateTime     @default(now())
+  createdAt DateTime @default(now())
 }
 
 model Membership {
-  id             String        @id @default(cuid())
-  role           Role
+  id   String @id @default(cuid())
+  role Role
 
   userId         String
   organizationId String
 
-  user           User          @relation(fields: [userId], references: [id])
-  organization   Organization  @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
 
   @@unique([userId, organizationId])
 }
 
 model Project {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  userId      String
+  id             String  @id @default(cuid())
+  name           String
+  description    String?
+  coverImage     String?
+  userId         String
+  organizationId String
+  isPrivate      Boolean @default(false)
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tasks       Task[]
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  tasks        Task[]
+  access       ProjectAccess[]
+  team         ProjectMember[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Task {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   title       String
   description String?
-  status      String   @default("todo")
-  priority    String   @default("medium")
+  status      String  @default("todo")
+  priority    String  @default("medium")
+  dueDate     DateTime?
   userId      String
   projectId   String
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProjectAccess {
+  id        String @id @default(cuid())
+  projectId String
+  userId    String
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, userId])
+}
+
+model Profile {
+  id        String  @id @default(cuid())
+  userId    String  @unique
+  bio       String?
+  avatarUrl String?
+  title     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProjectMember {
+  id        String @id @default(cuid())
+  projectId String
+  userId    String
+  role      String @default("contributor")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, userId])
 }

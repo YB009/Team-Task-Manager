@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import AuthLayout from "../../components/Layout/AuthLayout.jsx";
+import { useAuthContext } from "../../context/AuthContext.jsx";
 import {
   auth,
   googleProvider,
@@ -9,38 +9,39 @@ import {
   facebookProvider,
   twitterProvider,
 } from "../../api/firebase";
-import { useAuthContext } from "../../context/AuthContext.jsx";
+import { signInWithPopup, createUserWithEmailAndPassword } from "firebase/auth";
 
-const socialIcons = {
-  google: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg",
-  github: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg",
-  facebook: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/facebook/facebook-original.svg",
-  twitter: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/twitter/twitter-original.svg",
-};
-
-export default function LoginPage() {
+export default function RegisterPage() {
   const navigate = useNavigate();
   const { firebaseUser } = useAuthContext();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [form, setForm] = useState({ email: "", password: "", confirm: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (firebaseUser) {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [firebaseUser, navigate]);
+  const socialIcons = {
+    google: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg",
+    github: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg",
+    facebook: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/facebook/facebook-original.svg",
+    twitter: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/twitter/twitter-original.svg",
+  };
 
-  const handleEmailLogin = async (e) => {
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (form.password !== form.confirm) {
+      setError("Passwords do not match");
+      return;
+    }
     try {
       setLoading(true);
-      await signInWithEmailAndPassword(auth, email, password);
+      await createUserWithEmailAndPassword(auth, form.email, form.password);
       navigate("/oauth/success");
     } catch (err) {
-      setError(err.message || "Login failed");
+      setError(err.message || "Registration failed");
     } finally {
       setLoading(false);
     }
@@ -53,38 +54,35 @@ export default function LoginPage() {
       await signInWithPopup(auth, provider);
       navigate("/oauth/success");
     } catch (err) {
-      setError(err.message || "Social login failed");
+      setError(err.message || "Social signup failed");
     } finally {
       setLoading(false);
     }
   };
 
+  if (firebaseUser) {
+    navigate("/dashboard");
+    return null;
+  }
+
   return (
-    <AuthLayout title="Welcome back">
-      <form className="auth-actions" onSubmit={handleEmailLogin}>
+    <AuthLayout title="Create your account">
+      <form className="auth-actions" onSubmit={handleSubmit}>
         {error && <div className="error-text">{error}</div>}
         <div className="input-field">
           <label>Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            required
-          />
+          <input name="email" type="email" placeholder="you@example.com" value={form.email} onChange={handleChange} required />
         </div>
         <div className="input-field">
           <label>Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-          />
+          <input name="password" type="password" placeholder="••••••••" value={form.password} onChange={handleChange} required />
+        </div>
+        <div className="input-field">
+          <label>Confirm password</label>
+          <input name="confirm" type="password" placeholder="••••••••" value={form.confirm} onChange={handleChange} required />
         </div>
         <button type="submit" className="btn-primary" disabled={loading}>
-          {loading ? "Signing in..." : "Sign in"}
+          {loading ? "Creating..." : "Create account"}
         </button>
         <div className="social-grid">
           <button type="button" className="btn-ghost social-btn" disabled={loading} onClick={() => handleSocial(googleProvider)}>
@@ -105,7 +103,7 @@ export default function LoginPage() {
           </button>
         </div>
         <div className="auth-footnote">
-          New here? <Link to="/register">Create an account</Link>
+          Already have an account? <Link to="/login">Sign in</Link>
         </div>
       </form>
     </AuthLayout>

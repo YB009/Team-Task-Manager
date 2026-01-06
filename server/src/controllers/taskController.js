@@ -1,6 +1,28 @@
 import prisma from "../../prisma/client.js";
 import { assertRole, Roles } from "../utils/permissions.js";
 
+const ensureProjectAccess = async (projectId, userId, orgId, isPrivileged) => {
+  const project = await prisma.project.findFirst({
+    where: { id: projectId, organizationId: orgId },
+    include: { access: true }
+  });
+
+  if (!project) {
+    return { ok: false, status: 404, message: "Project not found in organization" };
+  }
+
+  if (isPrivileged) {
+    return { ok: true, project };
+  }
+
+  const hasAccess = project.access.some((a) => a.userId === userId);
+  if (!hasAccess) {
+    return { ok: false, status: 403, message: "No access to this project" };
+  }
+
+  return { ok: true, project };
+};
+
 export const createTask = async (req, res) => {
   try {
     const { title, description, status, priority, projectId } = req.body;
@@ -8,22 +30,10 @@ export const createTask = async (req, res) => {
     // Defensive role check (routes already enforce membership)
     assertRole(req.membership, [Roles.OWNER, Roles.ADMIN, Roles.MEMBER]);
 
-    // Ensure the project belongs to someone in the same org
-    const orgMembers = await prisma.membership.findMany({
-      where: { organizationId: req.orgId },
-      select: { userId: true }
-    });
-    const memberIds = orgMembers.map(m => m.userId);
-
-    const project = await prisma.project.findFirst({
-      where: {
-        id: projectId,
-        userId: { in: memberIds }
-      }
-    });
-
-    if (!project) {
-      return res.status(404).json({ message: "Project not found in organization" });
+    const isPrivileged = [Roles.OWNER, Roles.ADMIN].includes(req.membership.role);
+    const accessCheck = await ensureProjectAccess(projectId, req.user.id, req.orgId, isPrivileged);
+    if (!accessCheck.ok) {
+      return res.status(accessCheck.status).json({ message: accessCheck.message });
     }
 
     const task = await prisma.task.create({
@@ -48,16 +58,28 @@ export const createTask = async (req, res) => {
 
 export const getOrgTasks = async (req, res) => {
   try {
-    const orgMembers = await prisma.membership.findMany({
-      where: { organizationId: req.orgId },
-      select: { userId: true }
-    });
-    const memberIds = orgMembers.map(m => m.userId);
+    const isPrivileged = [Roles.OWNER, Roles.ADMIN].includes(req.membership.role);
+    let tasks;
 
-    const tasks = await prisma.task.findMany({
-      where: { userId: { in: memberIds } },
-      include: { project: true }
-    });
+    if (isPrivileged) {
+      tasks = await prisma.task.findMany({
+        where: { project: { organizationId: req.orgId } },
+        include: { project: true }
+      });
+    } else {
+      const allowedProjectIds = await prisma.projectAccess.findMany({
+        where: { userId: req.user.id, project: { organizationId: req.orgId } },
+        select: { projectId: true }
+      });
+
+      tasks = await prisma.task.findMany({
+        where: {
+          projectId: { in: allowedProjectIds.map((p) => p.projectId) },
+          project: { organizationId: req.orgId }
+        },
+        include: { project: true }
+      });
+    }
 
     res.json(tasks);
 

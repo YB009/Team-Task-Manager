@@ -5,8 +5,8 @@ export default defineConfig({
   root: ".",                 // IMPORTANT
   plugins: [react()],
   server: {
-    port: 5173,
-    strictPort: true,
+    port: 4173,
+    strictPort: false,
   },
   build: {
     outDir: "dist",

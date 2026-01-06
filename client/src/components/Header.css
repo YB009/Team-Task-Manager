@@ -1,0 +1,123 @@
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.06);
+  border: 1px solid #eef1f7;
+  margin-bottom: 16px;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  min-width: 260px;
+}
+
+.search input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  outline: none;
+  color: #0f172a;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon-btn {
+  position: relative;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.icon-btn:hover {
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+.badge-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+}
+
+.avatar-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+}
+
+.avatar-chip img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.dropdown {
+  position: absolute;
+  top: 52px;
+  right: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+  border-radius: 14px;
+  min-width: 200px;
+  padding: 6px 0;
+  z-index: 20;
+}
+
+.dropdown-section {
+  padding: 10px 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.dropdown-item:hover {
+  background: #f8fafc;
+}
+
+.dropdown-separator {
+  height: 1px;
+  background: #eef1f7;
+  margin: 6px 0;
+}

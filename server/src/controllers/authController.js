@@ -82,11 +82,16 @@ export const firebaseAuth = async (req, res) => {
           OR: [
             { email },
             { [providerField]: firebaseUid },
+            { firebaseUid },
           ],
         },
       });
     } else {
-      user = await prisma.user.findUnique({ where: { email } });
+      user = await prisma.user.findFirst({
+        where: {
+          OR: [{ email }, { firebaseUid }]
+        }
+      });
     }
 
     // Create new user if none

@@ -6,12 +6,19 @@ const statusColor = {
   Delayed: "#ef4444",
 };
 
-export default function ProjectCard({ project }) {
-  const { name, description, status = "OnTrack", progress = 0, stats = {}, tags = [] } = project;
+export default function ProjectCard({ project, onSelect }) {
+  const { name, description, status = "OnTrack", progress = 0, stats = {}, tags = [], coverImage } = project;
 
   return (
-    <div className="project-card">
-      <div className="project-card__thumb" />
+    <div className="project-card" onClick={onSelect} role="button" tabIndex={0}>
+      <div
+        className="project-card__thumb"
+        style={{
+          background: coverImage
+            ? `center/cover no-repeat url(${coverImage})`
+            : "linear-gradient(135deg, #fef3c7, #e0f2fe)"
+        }}
+      />
       <div className="project-card__body">
         <div className="project-card__header">
           <div>
