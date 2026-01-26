@@ -1,5 +1,6 @@
 import { Fragment, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { isTaskOverdue } from "../utils/taskUtils.js";
 
 const daysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
 const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -101,13 +102,13 @@ export default function ProjectCalendarView({ tasks = [], onTaskClick }) {
                       key={t.id}
                       onClick={() => (onTaskClick ? onTaskClick(t) : navigate(`/tasks/details?id=${t.id}`))}
                       style={{
-                        background: "#eef2ff",
+                        background: isTaskOverdue(t) ? "#fee2e2" : "#eef2ff",
                         border: "1px solid #e5e7eb",
                         borderRadius: 10,
                         padding: "6px 8px",
                         fontSize: 13,
                         fontWeight: 600,
-                        color: "#0f172a",
+                        color: isTaskOverdue(t) ? "#991b1b" : "#0f172a",
                         cursor: "pointer"
                       }}
                     >

@@ -23,6 +23,24 @@
   margin-bottom: 28px;
 }
 
+.org-onboarding__actions {
+  margin-left: auto;
+}
+
+.org-onboarding__link {
+  border: none;
+  background: transparent;
+  color: #4338ca;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+
+.org-onboarding__link:hover {
+  background: #eef2ff;
+}
+
 .org-onboarding__badge {
   width: 44px;
   height: 44px;

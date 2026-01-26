@@ -116,6 +116,28 @@
   border: 1px solid #eef1f7;
 }
 
+.org-list {
+  display: grid;
+  gap: 10px;
+}
+
+.org-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #eef1f7;
+  gap: 10px;
+}
+
+.org-name {
+  margin: 0 0 4px 0;
+  font-weight: 700;
+  color: #0f172a;
+}
+
 .settings-grid {
   display: grid;
   gap: 18px;

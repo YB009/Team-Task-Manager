@@ -12,6 +12,7 @@ const statusLabel = (status) => status || "ACTIVE";
 export default function MembersTable({
   members,
   currentRole,
+  onOpenProfile,
   onInviteResend,
   onInviteCopy,
   onInviteCancel,
@@ -64,7 +65,11 @@ export default function MembersTable({
 
         return (
           <div className="team-table__row" key={member.id}>
-            <div className="member-cell">
+            <button
+              type="button"
+              className="member-cell member-button"
+              onClick={() => onOpenProfile?.(member)}
+            >
               <div className="member-avatar">
                 {member.initials}
               </div>
@@ -72,7 +77,7 @@ export default function MembersTable({
                 <p className="member-name">{member.name}</p>
                 <p className="member-email">{member.email}</p>
               </div>
-            </div>
+            </button>
             <RoleBadge role={member.role} />
             <span className={statusStyles[status] || statusStyles.ACTIVE}>
               {status}

@@ -7,6 +7,7 @@ import TaskDetailDrawer from "../components/tasks/TaskDetailDrawer.jsx";
 import CreateTaskDrawer from "../components/tasks/CreateTaskDrawer.jsx";
 import { fetchTeamMembers } from "../api/teamApi.js";
 import { useNavigate } from "react-router-dom";
+import { isTaskOverdue } from "../utils/taskUtils.js";
 
 const statusColor = {
   "not started": "danger",
@@ -112,7 +113,11 @@ export default function MyTask() {
                 const status = toStatus(t.status);
                 return (
                   <FadeIn key={t.id} delay={idx * 40}>
-                    <div className="task-row" style={{ cursor: "pointer" }} onClick={() => setActiveTask(t)}>
+                    <div
+                      className={`task-row${isTaskOverdue(t) ? " task-row--overdue" : ""}`}
+                      style={{ cursor: "pointer" }}
+                      onClick={() => setActiveTask(t)}
+                    >
                       <span className="task-title">{t.title}</span>
                       <span className="cell-center">{formatDate(t.dueDate || t.updatedAt)}</span>
                       <span className="cell-center"><span className={`pill priority-${(t.priority || "").toLowerCase()}`}>{t.priority || "-"}</span></span>
@@ -132,6 +137,25 @@ export default function MyTask() {
         showBack
         onBack={() => setActiveTask(null)}
         members={members}
+        onDueDateChange={async (newDate) => {
+          if (!activeTask || !activeOrganization || !firebaseUser) return;
+          const nextDate = newDate ? new Date(newDate).toISOString() : null;
+          setTasks((prev) =>
+            prev.map((t) => (t.id === activeTask.id ? { ...t, dueDate: nextDate } : t))
+          );
+          setActiveTask((t) => (t ? { ...t, dueDate: nextDate } : t));
+          try {
+            const headers = { Authorization: `Bearer ${await firebaseUser.getIdToken()}` };
+            await axios.patch(
+              `/api/tasks/org/${activeOrganization.id}/${activeTask.id}`,
+              { dueDate: newDate || null },
+              { headers }
+            );
+          } catch (err) {
+            console.error(err);
+            setError("Failed to update due date.");
+          }
+        }}
         onAssigneesChange={async (assigneeIds) => {
           if (!activeTask || !activeOrganization || !firebaseUser) return;
           try {

@@ -17,15 +17,19 @@ import TaskDetailsPage from "./pages/tasks/TaskDetailsPage.jsx";
 import CreateTaskPage from "./pages/tasks/CreateTaskPage.jsx";
 import MyTask from "./pages/MyTask.jsx";
 import AllTasksPage from "./pages/tasks/AllTasksPage.jsx";
+import OverdueTasksPage from "./pages/tasks/OverdueTasksPage.jsx";
 import ActivityPage from "./pages/activity/ActivityPage.jsx";
 import TeamPage from "./pages/team/TeamPage.jsx";
 import SettingsPage from "./pages/settings/SettingsPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 import OrganizationOnboardingPage from "./pages/onboarding/OrganizationOnboardingPage.jsx";
+import Drawer from "./components/ui/Drawer.jsx";
+import { useProfile } from "./context/ProfileContext.jsx";
 
 function App() {
   const { firebaseUser, loading, hasOrganization, bootstrapped } = useAuthContext();
   const location = useLocation();
+  const { profileState, closeProfile } = useProfile();
 
   const ProtectedRoute = () => {
     if (loading || !bootstrapped) {
@@ -62,46 +66,57 @@ function App() {
   };
 
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/oauth/success" element={<OAuthSuccessPage />} />
-      <Route
-        path="/invite/accept"
-        element={
-          <AcceptInviteGuard>
-            <AcceptInvitePage />
-          </AcceptInviteGuard>
-        }
-      />
+    <>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/oauth/success" element={<OAuthSuccessPage />} />
+        <Route
+          path="/invite/accept"
+          element={
+            <AcceptInviteGuard>
+              <AcceptInvitePage />
+            </AcceptInviteGuard>
+          }
+        />
 
-      <Route
-        element={<ProtectedRoute />}
-      >
-        <Route path="/onboarding/organization" element={<OnboardingGuard />} />
+        <Route
+          element={<ProtectedRoute />}
+        >
+          <Route path="/onboarding/organization" element={<OnboardingGuard />} />
+          <Route path="/organizations" element={<OrganizationOnboardingPage />} />
 
-        <Route path="/" element={<OrgGuard />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="dashboard-animated" element={<DashboardAnimated />} />
-          <Route path="projects" element={<ProjectListPage />} />
-          <Route path="projects/list" element={<ProjectListPage />} />
-          <Route path="projects/details" element={<ProjectDetailsPage />} />
-          <Route path="projects/create" element={<CreateProjectPage />} />
-          <Route path="projects/edit" element={<EditProjectPage />} />
-          <Route path="tasks" element={<TaskBoardPage />} />
-          <Route path="tasks/list" element={<MyTask />} />
-          <Route path="tasks/all" element={<AllTasksPage />} />
-          <Route path="tasks/details" element={<TaskDetailsPage />} />
-          <Route path="tasks/create" element={<CreateTaskPage />} />
-          <Route path="activity" element={<ActivityPage />} />
-          <Route path="team" element={<TeamPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="profile/:userId" element={<SettingsPage />} />
-          <Route path="*" element={<NotFoundPage />} />
+          <Route path="/" element={<OrgGuard />}>
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="dashboard-animated" element={<DashboardAnimated />} />
+            <Route path="projects" element={<ProjectListPage />} />
+            <Route path="projects/list" element={<ProjectListPage />} />
+            <Route path="projects/details" element={<ProjectDetailsPage />} />
+            <Route path="projects/create" element={<CreateProjectPage />} />
+            <Route path="projects/edit" element={<EditProjectPage />} />
+            <Route path="tasks" element={<TaskBoardPage />} />
+            <Route path="tasks/list" element={<MyTask />} />
+            <Route path="tasks/all" element={<AllTasksPage />} />
+            <Route path="tasks/overdue" element={<OverdueTasksPage />} />
+            <Route path="tasks/details" element={<TaskDetailsPage />} />
+            <Route path="tasks/create" element={<CreateTaskPage />} />
+            <Route path="activity" element={<ActivityPage />} />
+            <Route path="team" element={<TeamPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="profile/:userId" element={<SettingsPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
         </Route>
-      </Route>
-    </Routes>
+      </Routes>
+      <Drawer open={profileState.open} onClose={closeProfile}>
+        <SettingsPage
+          profileUserId={profileState.userId}
+          readOnly={profileState.mode !== "self"}
+          inviteProfile={profileState.invite}
+        />
+      </Drawer>
+    </>
   );
 }
 

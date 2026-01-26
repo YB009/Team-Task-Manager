@@ -48,6 +48,25 @@
   gap: 12px;
 }
 
+.member-button {
+  background: transparent;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+
+.member-button:hover .member-name {
+  text-decoration: underline;
+}
+
+.member-button:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.5);
+  outline-offset: 4px;
+  border-radius: 10px;
+}
+
 .member-avatar {
   width: 38px;
   height: 38px;

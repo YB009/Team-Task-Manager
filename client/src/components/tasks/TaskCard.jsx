@@ -1,4 +1,5 @@
 import "./TaskCard.css";
+import { isTaskOverdue } from "../../utils/taskUtils.js";
 
 const priorityColors = {
   high: "#ef4444",
@@ -26,10 +27,11 @@ const initialsFrom = (name = "") => {
 export default function TaskCard({ task, onClick }) {
   const priority = (task.priority || "").toLowerCase();
   const assignees = (task.assignees || []).map((a) => a.user || { id: a.userId });
-  const avatarList = assignees.length ? assignees : [task.user].filter(Boolean);
+  const avatarList = assignees;
+  const overdue = isTaskOverdue(task);
 
   return (
-    <button className="task-card" onClick={onClick} type="button">
+    <button className={`task-card${overdue ? " task-card--overdue" : ""}`} onClick={onClick} type="button">
       <div className="task-card__top">
         <span
           className="pill"
@@ -47,14 +49,16 @@ export default function TaskCard({ task, onClick }) {
       {task.description && <div className="task-card__desc">{task.description}</div>}
 
       <div className="task-card__footer">
-        <div className="avatar-stack" title="Assignees">
-          {avatarList.slice(0, 3).map((person, idx) => (
-            <div key={person?.id || idx} className="avatar-chip" style={{ marginLeft: idx === 0 ? 0 : -8 }}>
-              {initialsFrom(person?.name || person?.email || "?")}
-            </div>
-          ))}
-          {avatarList.length > 3 && <span className="avatar-more">+{avatarList.length - 3}</span>}
-        </div>
+        {avatarList.length > 0 && (
+          <div className="avatar-stack" title="Assignees">
+            {avatarList.slice(0, 3).map((person, idx) => (
+              <div key={person?.id || idx} className="avatar-chip" style={{ marginLeft: idx === 0 ? 0 : -8 }}>
+                {initialsFrom(person?.name || person?.email || "?")}
+              </div>
+            ))}
+            {avatarList.length > 3 && <span className="avatar-more">+{avatarList.length - 3}</span>}
+          </div>
+        )}
         <div style={{ display: "flex", gap: 8 }}>
           <span className="pill pill--muted" style={{ backgroundColor: "#eef2ff" }}>
             Obj {task.objectives?.length ?? 0}

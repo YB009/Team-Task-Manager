@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import axios from "../api/axiosInstance";
 import { loginWithFirebase } from "../api/authApi";
 import { useAuthContext } from "../context/AuthContext.jsx";
+import { useProfile } from "../context/ProfileContext.jsx";
 import {
   Search,
   FolderKanban,
@@ -45,9 +46,11 @@ const formatRelativeTime = (value) => {
 
 export default function Dashboard() {
   const { firebaseUser, user, activeOrganization } = useAuthContext();
+  const { openProfile } = useProfile();
   const [searchParams] = useSearchParams();
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [teamCount, setTeamCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
   const [debouncedQuery, setDebouncedQuery] = useState(searchParams.get("q") || "");
   const [loading, setLoading] = useState(true);
@@ -78,18 +81,22 @@ export default function Dashboard() {
       if (!activeOrganization) {
         setProjects([]);
         setTasks([]);
+        setTeamCount(0);
         setLastUpdated(Date.now());
         lastOrgRef.current = "";
         return;
       }
 
-      const [projectRes, taskRes] = await Promise.all([
+      const [projectRes, taskRes, teamRes] = await Promise.all([
         axios.get(`/api/projects/org/${activeOrganization.id}`, { headers: authHeader }),
-        axios.get(`/api/tasks/org/${activeOrganization.id}`, { headers: authHeader })
+        axios.get(`/api/tasks/org/${activeOrganization.id}`, { headers: authHeader }),
+        axios.get(`/api/team/members`, { headers: authHeader, params: { orgId: activeOrganization.id } })
       ]);
 
       setProjects(projectRes.data || []);
       setTasks(taskRes.data || []);
+      const teamItems = teamRes.data?.items || [];
+      setTeamCount(teamItems.filter((member) => !member.isInvite).length);
       setLastUpdated(Date.now());
       lastOrgRef.current = activeOrganization.id;
     } catch (err) {
@@ -171,17 +178,6 @@ export default function Dashboard() {
         timestamp: p.updatedAt || p.createdAt
       }))
     ];
-
-    if (user) {
-      pool.push({
-        id: `user-${user.id}`,
-        type: "User",
-        title: user.name || user.email,
-        subtitle: user.email,
-        meta: user.provider ? `${user.provider} sign-in` : "User",
-        timestamp: user.createdAt
-      });
-    }
 
     if (!term) {
       return pool.slice(0, 6);
@@ -299,7 +295,7 @@ export default function Dashboard() {
           </div>
           <div>
             <p className="stat-card__label">People in view</p>
-            <p className="stat-card__value">{showSkeleton ? <span className="skeleton-line" /> : user ? 1 : 0}</p>
+              <p className="stat-card__value">{showSkeleton ? <span className="skeleton-line" /> : teamCount}</p>
           </div>
         </div>
       </div>
@@ -314,7 +310,6 @@ export default function Dashboard() {
             <div className="search-meta">
               <span className="chip">Tasks {tasks.length}</span>
               <span className="chip">Projects {projects.length}</span>
-              <span className="chip">Users {user ? 1 : 0}</span>
             </div>
           </div>
 
@@ -350,7 +345,16 @@ export default function Dashboard() {
             {!loading &&
               !error &&
               searchResults.map((item) => (
-                <div key={item.id} className="result-card hover-lift">
+                <button
+                  key={item.id}
+                  type="button"
+                  className="result-card hover-lift"
+                  onClick={() => {
+                    if (item.type === "User" && item.userId) {
+                      openProfile(item.userId, "readonly");
+                    }
+                  }}
+                >
                   <div className="result-type">{item.type}</div>
                   <div>
                     <p className="result-title">{item.title}</p>
@@ -360,7 +364,7 @@ export default function Dashboard() {
                     </p>
                   </div>
                   <ArrowUpRight size={16} />
-                </div>
+                </button>
               ))}
           </div>
         </div>

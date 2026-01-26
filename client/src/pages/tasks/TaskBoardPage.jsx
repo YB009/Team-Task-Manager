@@ -8,6 +8,7 @@ import "../../App.css";
 import axios from "../../api/axiosInstance";
 import { useAuthContext } from "../../context/AuthContext.jsx";
 import { fetchTeamMembers } from "../../api/teamApi.js";
+import { isTaskOverdue } from "../../utils/taskUtils.js";
 
 const normalizeStatusKey = (status = "") => {
   const s = status.toLowerCase();
@@ -69,9 +70,11 @@ export default function TaskBoardPage() {
     load();
   }, [firebaseUser, activeOrganization]);
 
+  const boardTasks = useMemo(() => tasks.filter((t) => !isTaskOverdue(t)), [tasks]);
+
   const grouped = useMemo(() => {
     const buckets = { not_started: [], in_progress: [], completed: [], assigned: [] };
-    tasks.forEach((t) => {
+    boardTasks.forEach((t) => {
       const key = normalizeStatusKey(t.status);
       buckets[key].push(t);
       const hasAssignees = Array.isArray(t.assignees) && t.assignees.length > 0;
@@ -80,7 +83,7 @@ export default function TaskBoardPage() {
       }
     });
     return buckets;
-  }, [tasks, user]);
+  }, [boardTasks, user]);
 
   const onDragStart = (task, from) => {
     setDragging({ task, from });
@@ -138,6 +141,7 @@ export default function TaskBoardPage() {
         <h1>Task Board</h1>
         <div className="actions">
           <button className="btn-ghost" onClick={() => navigate("/tasks/all")}>All tasks</button>
+          <button className="btn-ghost" onClick={() => navigate("/tasks/overdue")}>Overdue</button>
           <button className="btn-primary" onClick={() => setShowCreate(true)}>Create task</button>
         </div>
       </div>
@@ -183,6 +187,25 @@ export default function TaskBoardPage() {
           setTasks(nextTasks);
           setActiveTask((t) => (t ? { ...t, status: newStatus } : t));
           await persistStatus(activeTask.id, newStatus);
+        }}
+        onDueDateChange={async (newDate) => {
+          if (!activeTask || !activeOrganization || !firebaseUser) return;
+          const nextDate = newDate ? new Date(newDate).toISOString() : null;
+          setTasks((prev) =>
+            prev.map((t) => (t.id === activeTask.id ? { ...t, dueDate: nextDate } : t))
+          );
+          setActiveTask((t) => (t ? { ...t, dueDate: nextDate } : t));
+          try {
+            const headers = { Authorization: `Bearer ${await firebaseUser.getIdToken()}` };
+            await axios.patch(
+              `/api/tasks/org/${activeOrganization.id}/${activeTask.id}`,
+              { dueDate: newDate || null },
+              { headers }
+            );
+          } catch (err) {
+            console.error(err);
+            setError("Failed to update due date.");
+          }
         }}
         onAssigneesChange={async (assigneeIds) => {
           if (!activeTask || !activeOrganization || !firebaseUser) return;

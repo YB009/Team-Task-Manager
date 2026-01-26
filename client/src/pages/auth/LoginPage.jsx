@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
+import { useEffect, useRef, useState } from "react";
+import { signInWithRedirect, signInWithEmailAndPassword } from "firebase/auth";
 import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "../../components/Layout/AuthLayout.jsx";
 import {
@@ -21,13 +21,20 @@ const socialIcons = {
 export default function LoginPage() {
   const navigate = useNavigate();
   const { firebaseUser } = useAuthContext();
+  const pendingOAuthRef = useRef(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const redirectFlag = "ttm_oauth_redirect";
 
   useEffect(() => {
-    if (firebaseUser) {
+    if (firebaseUser && sessionStorage.getItem(redirectFlag)) {
+      sessionStorage.removeItem(redirectFlag);
+      navigate("/oauth/success", { replace: true });
+      return;
+    }
+    if (firebaseUser && !pendingOAuthRef.current) {
       navigate("/dashboard", { replace: true });
     }
   }, [firebaseUser, navigate]);
@@ -37,9 +44,11 @@ export default function LoginPage() {
     setError("");
     try {
       setLoading(true);
+      pendingOAuthRef.current = true;
       await signInWithEmailAndPassword(auth, email, password);
       navigate("/oauth/success");
     } catch (err) {
+      pendingOAuthRef.current = false;
       setError(err.message || "Login failed");
     } finally {
       setLoading(false);
@@ -50,9 +59,12 @@ export default function LoginPage() {
     setError("");
     try {
       setLoading(true);
-      await signInWithPopup(auth, provider);
-      navigate("/oauth/success");
+      pendingOAuthRef.current = true;
+      sessionStorage.setItem(redirectFlag, "1");
+      await signInWithRedirect(auth, provider);
     } catch (err) {
+      pendingOAuthRef.current = false;
+      sessionStorage.removeItem(redirectFlag);
       setError(err.message || "Social login failed");
     } finally {
       setLoading(false);

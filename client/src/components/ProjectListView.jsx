@@ -1,3 +1,5 @@
+import { isTaskOverdue } from "../utils/taskUtils.js";
+
 const badgeColor = {
   "Not Started": "#fca5a5",
   "In Progress": "#facc15",
@@ -10,6 +12,7 @@ const normalizeStatus = (status = "") => {
   if (["in progress", "ongoing", "progress"].includes(s)) return "In Progress";
   return "Not Started";
 };
+
 
 export default function ProjectListView({ tasks = [], onTaskClick }) {
   const rows = tasks.map((t) => ({
@@ -34,7 +37,11 @@ export default function ProjectListView({ tasks = [], onTaskClick }) {
           {rows.map((t) => (
             <tr
               key={t.id}
-              style={{ borderTop: "1px solid #e5e7eb", cursor: onTaskClick ? "pointer" : "default" }}
+              style={{
+                borderTop: "1px solid #e5e7eb",
+                cursor: onTaskClick ? "pointer" : "default",
+                background: isTaskOverdue(t) ? "#fff1f2" : "transparent"
+              }}
               onClick={() => onTaskClick && onTaskClick(t)}
             >
               <td style={{ padding: "10px" }}>{t.title}</td>

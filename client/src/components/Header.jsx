@@ -1,20 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { Bell, Settings, Search, LogOut, User, ChevronDown } from "lucide-react";
+import { Bell, Settings, LogOut, User, ChevronDown } from "lucide-react";
 import "./Header.css";
 import { useAuthContext } from "../context/AuthContext.jsx";
-import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import workviteIcon from "../assets/workvite-icon.svg";
+import workviteLogo from "../assets/workvite-logo.svg";
 
 export default function Header() {
   const { logout, firebaseUser, user, organizations, activeOrganization, setActiveOrganization } = useAuthContext();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [search, setSearch] = useState("");
-  const [searchParams, setSearchParams] = useSearchParams();
-  const searchDebounceRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [orgOpen, setOrgOpen] = useState(false);
-  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const menuRef = useRef(null);
   const orgRef = useRef(null);
 
@@ -45,48 +43,6 @@ export default function Header() {
     setOrgOpen(false);
   }, [location]);
 
-  useEffect(() => {
-    if (location.pathname !== "/dashboard") return;
-    const params = new URLSearchParams(location.search);
-    const q = params.get("q") || "";
-    setSearch(q);
-  }, [location.pathname, location.search]);
-
-  const handleSearch = (value) => {
-    setSearch(value);
-  };
-
-  const onKeyDown = (e) => {
-    if (e.key === "Enter" && location.pathname === "/dashboard") {
-      const next = new URLSearchParams(searchParams);
-      if (search.trim()) {
-        next.set("q", search.trim());
-      } else {
-        next.delete("q");
-      }
-      setSearchParams(next, { replace: true });
-    }
-  };
-
-  useEffect(() => {
-    if (location.pathname !== "/dashboard") return;
-    if (searchDebounceRef.current) {
-      clearTimeout(searchDebounceRef.current);
-    }
-    searchDebounceRef.current = setTimeout(() => {
-      const next = new URLSearchParams(searchParams);
-      if (search.trim()) {
-        next.set("q", search.trim());
-      } else {
-        next.delete("q");
-      }
-      if (next.toString() !== searchParams.toString()) {
-        setSearchParams(next, { replace: true });
-      }
-    }, 300);
-    return () => clearTimeout(searchDebounceRef.current);
-  }, [search, location.pathname, searchParams, setSearchParams]);
-
   const handleBell = () => navigate("/activity");
   const handleSettings = () => navigate("/settings");
   const handleOrgChange = (orgId) => {
@@ -97,6 +53,9 @@ export default function Header() {
   return (
     <header className="header-root">
       <div className="header-brand">
+        <div className="header-logo-icon">
+          <img src={workviteIcon} alt="Workvite" />
+        </div>
         <div className="org-switch org-switch--hero" ref={orgRef}>
           <button className="org-switch__button org-switch__button--hero" onClick={() => setOrgOpen((p) => !p)}>
             <span className="org-switch__label-text">Workspace</span>
@@ -119,7 +78,7 @@ export default function Header() {
                 </button>
               ))}
               <div className="org-switch__divider" />
-              <button className="org-switch__item" onClick={() => navigate("/onboarding/organization")}>
+              <button className="org-switch__item" onClick={() => navigate("/organizations")}>
                 + Create or join
               </button>
             </div>
@@ -127,23 +86,8 @@ export default function Header() {
         </div>
       </div>
 
-      <div className={`header-search ${showMobileSearch ? "header-search--open" : ""}`}>
-        <Search size={16} />
-        <input
-          id="header-search"
-          name="header-search"
-          type="text"
-          placeholder="Search anything..."
-          value={search}
-          onChange={(e) => handleSearch(e.target.value)}
-          onKeyDown={onKeyDown}
-        />
-        <button
-          className="search-toggle"
-          onClick={() => setShowMobileSearch((p) => !p)}
-        >
-          <Search size={16} />
-        </button>
+      <div className="header-logo">
+        <img src={workviteLogo} alt="Workvite" />
       </div>
 
       <div className="header-actions">

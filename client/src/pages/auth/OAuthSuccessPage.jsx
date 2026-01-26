@@ -1,26 +1,22 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../context/AuthContext.jsx";
-import Antigravity from "../../components/Antigravity.jsx";
+// Antigravity removed here to avoid WebGL context loss during OAuth flow
 
 export default function OAuthSuccessPage() {
   const navigate = useNavigate();
   const { firebaseUser, loading } = useAuthContext();
-  const [hasInteracted, setHasInteracted] = useState(false);
+  const [readyToRedirect, setReadyToRedirect] = useState(false);
+  const [showCanvas, setShowCanvas] = useState(false);
   const [pointer, setPointer] = useState({ x: 0.5, y: 0.5 });
   const [blink, setBlink] = useState(false);
 
   useEffect(() => {
-    const trigger = () => setHasInteracted(true);
     const track = (e) => {
       const x = e.clientX / window.innerWidth;
       const y = e.clientY / window.innerHeight;
       setPointer({ x, y });
     };
-    window.addEventListener("click", trigger, { once: true });
-    window.addEventListener("scroll", trigger, { once: true });
-    window.addEventListener("touchstart", trigger, { once: true });
-    window.addEventListener("keydown", trigger, { once: true });
     window.addEventListener("mousemove", track);
 
     const blinkTimer = setInterval(() => {
@@ -28,28 +24,39 @@ export default function OAuthSuccessPage() {
       setTimeout(() => setBlink(false), 120);
     }, 3200);
 
+    const visibilityHandler = () => {
+      setShowCanvas(!document.hidden);
+    };
+    document.addEventListener("visibilitychange", visibilityHandler);
+
     return () => {
-      window.removeEventListener("click", trigger);
-      window.removeEventListener("scroll", trigger);
-      window.removeEventListener("touchstart", trigger);
-      window.removeEventListener("keydown", trigger);
       window.removeEventListener("mousemove", track);
+      document.removeEventListener("visibilitychange", visibilityHandler);
       clearInterval(blinkTimer);
     };
   }, []);
 
   useEffect(() => {
-    if (!loading && firebaseUser && hasInteracted) {
-      navigate("/dashboard", { replace: true });
+    if (loading) return;
+    if (!firebaseUser) {
+      navigate("/login", { replace: true });
+      return;
     }
-  }, [firebaseUser, loading, hasInteracted, navigate]);
+    setReadyToRedirect(true);
+  }, [firebaseUser, loading, navigate]);
+
+  const handleContinue = () => {
+    if (document.hidden) return;
+    if (!readyToRedirect) return;
+    navigate("/dashboard", { replace: true });
+  };
 
   return (
     <div className="antigravity-bg">
-      <div className="antigravity-canvas">
-        <Antigravity color="#656567" particleShape="box" autoAnimate fieldStrength={10} />
-      </div>
-      <div className="oauth-hero">
+      {showCanvas && (
+        <div className="antigravity-canvas" />
+      )}
+      <div className="oauth-hero" onClick={handleContinue} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && handleContinue()}>
         <Eyes pointer={pointer} blink={blink} />
         <h1
           className="hero-title"
@@ -59,7 +66,7 @@ export default function OAuthSuccessPage() {
         >
           Welcome to WorkVite
         </h1>
-        <p className="muted hero-sub">Click, scroll, or tap to continue</p>
+        <p className="muted hero-sub">Tap, click, or press Enter to continue</p>
       </div>
     </div>
   );

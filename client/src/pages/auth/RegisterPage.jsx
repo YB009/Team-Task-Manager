@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import AuthLayout from "../../components/Layout/AuthLayout.jsx";
 import { useAuthContext } from "../../context/AuthContext.jsx";
@@ -9,11 +9,13 @@ import {
   facebookProvider,
   twitterProvider,
 } from "../../api/firebase";
-import { signInWithPopup, createUserWithEmailAndPassword } from "firebase/auth";
+import { signInWithRedirect, createUserWithEmailAndPassword } from "firebase/auth";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { firebaseUser } = useAuthContext();
+  const pendingOAuthRef = useRef(false);
+  const redirectFlag = "ttm_oauth_redirect";
   const [form, setForm] = useState({ email: "", password: "", confirm: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -38,9 +40,11 @@ export default function RegisterPage() {
     }
     try {
       setLoading(true);
+      pendingOAuthRef.current = true;
       await createUserWithEmailAndPassword(auth, form.email, form.password);
       navigate("/oauth/success");
     } catch (err) {
+      pendingOAuthRef.current = false;
       setError(err.message || "Registration failed");
     } finally {
       setLoading(false);
@@ -51,16 +55,24 @@ export default function RegisterPage() {
     setError("");
     try {
       setLoading(true);
-      await signInWithPopup(auth, provider);
-      navigate("/oauth/success");
+      pendingOAuthRef.current = true;
+      sessionStorage.setItem(redirectFlag, "1");
+      await signInWithRedirect(auth, provider);
     } catch (err) {
+      pendingOAuthRef.current = false;
+      sessionStorage.removeItem(redirectFlag);
       setError(err.message || "Social signup failed");
     } finally {
       setLoading(false);
     }
   };
 
-  if (firebaseUser) {
+  if (firebaseUser && sessionStorage.getItem(redirectFlag)) {
+    sessionStorage.removeItem(redirectFlag);
+    navigate("/oauth/success");
+    return null;
+  }
+  if (firebaseUser && !pendingOAuthRef.current) {
     navigate("/dashboard");
     return null;
   }

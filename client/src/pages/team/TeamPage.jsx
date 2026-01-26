@@ -5,6 +5,7 @@ import { useAuthContext } from "../../context/AuthContext.jsx";
 import MembersTable from "./MembersTable.jsx";
 import InviteModal from "./InviteModal.jsx";
 import ProjectAccessModal from "./ProjectAccessModal.jsx";
+import { useProfile } from "../../context/ProfileContext.jsx";
 import {
   deactivateTeamMember,
   cancelTeamInvite,
@@ -37,6 +38,7 @@ const normalizeMember = (member, currentUserId) => {
 
 export default function TeamPage() {
   const { firebaseUser, user, activeOrganization } = useAuthContext();
+  const { openProfile } = useProfile();
   const [projects, setProjects] = useState([]);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -202,6 +204,22 @@ export default function TeamPage() {
     }
   };
 
+  const handleOpenProfile = (member) => {
+    if (!member) return;
+    if (member.isInvite) {
+      openProfile(null, "readonly", {
+        name: member.name || "",
+        email: member.email,
+        role: member.role,
+        status: member.status || "INVITED"
+      });
+      return;
+    }
+    if (member.userId) {
+      openProfile(member.userId, member.isSelf ? "self" : "readonly");
+    }
+  };
+
   const canInvite = ["OWNER", "ADMIN"].includes(currentRole);
 
   return (
@@ -243,6 +261,7 @@ export default function TeamPage() {
           <MembersTable
             members={members}
             currentRole={currentRole}
+            onOpenProfile={handleOpenProfile}
             onInviteResend={handleInviteResend}
             onInviteCopy={handleInviteCopy}
             onInviteCancel={handleInviteCancel}

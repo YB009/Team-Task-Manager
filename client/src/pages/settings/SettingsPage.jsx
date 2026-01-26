@@ -10,11 +10,13 @@ const isTaskComplete = (status = "") => {
   return ["done", "completed", "complete", "closed"].includes(normalized);
 };
 
-export default function SettingsPage() {
+export default function SettingsPage({ profileUserId, readOnly = false, inviteProfile = null }) {
   const { firebaseUser, user, logout, activeOrganization } = useAuthContext();
   const { userId } = useParams();
   const navigate = useNavigate();
-  const isSelf = !userId || userId === user?.id;
+  const effectiveUserId = profileUserId || userId;
+  const isSelf = !effectiveUserId || effectiveUserId === user?.id;
+  const canEdit = isSelf && !readOnly;
 
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState(null);
@@ -41,30 +43,53 @@ export default function SettingsPage() {
         const headers = { Authorization: `Bearer ${await firebaseUser.getIdToken()}` };
         const org = activeOrganization;
 
-        if (userId && userId !== user?.id) {
+        if (inviteProfile) {
+          setProfile({
+            user: { id: null, name: "", email: inviteProfile.email, provider: "invite" },
+            profile: { title: "", bio: "", avatarUrl: "" },
+            organizations: [
+              {
+                id: org?.id || "org",
+                name: org?.name || "Organization",
+                role: inviteProfile.role || "MEMBER"
+              }
+            ],
+            invite: inviteProfile
+          });
+          setOrgRoles([
+            {
+              id: org?.id || "org",
+              name: org?.name || "Organization",
+              role: inviteProfile.role || "MEMBER"
+            }
+          ]);
+          setProjects([]);
+          setStats(null);
+          setForm({
+            name: inviteProfile.name || "",
+            title: "",
+            bio: "",
+            avatarUrl: ""
+          });
+          return;
+        }
+
+        if (effectiveUserId && effectiveUserId !== user?.id) {
           if (!org) {
             setError("No workspace found for profile lookup.");
             return;
           }
-          const teamRes = await axios.get(`/api/team/members?orgId=${org.id}`, { headers });
-          const match = teamRes.data?.items?.find((m) => m.userId === userId);
-          if (!match) {
-            setError("Profile not found or invite pending.");
-            return;
-          }
-          setProfile({
-            user: { id: match.userId, name: match.name, email: match.email, provider: "workspace" },
-            profile: { title: "", bio: "", avatarUrl: "" },
-            organizations: [{ id: org.id, name: org.name, role: match.role }]
-          });
-          setOrgRoles([{ id: org.id, name: org.name, role: match.role }]);
-          setProjects([]);
-          setStats(null);
+          const profileRes = await axios.get(`/api/users/${effectiveUserId}/profile`, { headers });
+          const profileData = profileRes.data;
+          setProfile(profileData);
+          setOrgRoles(profileData.organizations || []);
+          setProjects(profileData.projects || []);
+          setStats(profileData.stats || null);
           setForm({
-            name: match.name || "",
-            title: "",
-            bio: "",
-            avatarUrl: ""
+            name: profileData.user?.name || "",
+            title: profileData.profile?.title || "",
+            bio: profileData.profile?.bio || "",
+            avatarUrl: profileData.profile?.avatarUrl || ""
           });
           return;
         }
@@ -118,7 +143,8 @@ export default function SettingsPage() {
           allProjects.map((p) => ({
             ...p,
             role: p.userId === profileData.user?.id ? "Owner" : "Member",
-            status: completedProjects.find((c) => c.id === p.id) ? "Completed" : "Active"
+            status: completedProjects.find((c) => c.id === p.id) ? "Completed" : "Active",
+            organization: org ? { id: org.id, name: org.name } : null
           }))
         );
       } catch (err) {
@@ -129,7 +155,7 @@ export default function SettingsPage() {
       }
     };
     load();
-  }, [firebaseUser, userId, user, activeOrganization]);
+  }, [firebaseUser, effectiveUserId, inviteProfile, user, activeOrganization]);
 
   const handleAvatarUpload = (file) => {
     if (!file) return;
@@ -176,7 +202,7 @@ export default function SettingsPage() {
             {isSelf ? "Your workspace identity and contribution summary." : "Workspace profile overview."}
           </p>
         </div>
-        {isSelf && (
+        {canEdit && (
           <button className="btn-primary" onClick={() => (editing ? handleSave() : setEditing(true))} disabled={saving}>
             {editing ? <CheckCircle2 size={16} /> : <PencilLine size={16} />}
             {editing ? "Save profile" : "Edit profile"}
@@ -204,7 +230,7 @@ export default function SettingsPage() {
                 className="settings-input"
                 value={form.name}
                 onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                disabled={!editing}
+                disabled={!editing || !canEdit}
               />
             </div>
             <div>
@@ -219,7 +245,7 @@ export default function SettingsPage() {
                 className="settings-input"
                 value={form.title}
                 onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-                disabled={!editing}
+                disabled={!editing || !canEdit}
                 placeholder="Product designer"
               />
             </div>
@@ -235,7 +261,7 @@ export default function SettingsPage() {
                 rows={3}
                 value={form.bio}
                 onChange={(e) => setForm((prev) => ({ ...prev, bio: e.target.value }))}
-                disabled={!editing}
+                disabled={!editing || !canEdit}
               />
             </div>
           </div>
@@ -243,6 +269,21 @@ export default function SettingsPage() {
             <span>Member since: {new Date(profile?.profile?.createdAt || Date.now()).toLocaleDateString()}</span>
             <span>Roles: {orgRoles.map((o) => o.role).join(", ") || "Member"}</span>
           </div>
+        </div>
+      </section>
+
+      <section className="settings-card">
+        <h3>Organizations</h3>
+        <div className="org-list">
+          {orgRoles.length === 0 && <p className="muted">No organization memberships yet.</p>}
+          {orgRoles.map((org) => (
+            <div key={org.id} className="org-row">
+              <div>
+                <p className="org-name">{org.name}</p>
+                <span className="muted">Role: {org.role}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -289,7 +330,7 @@ export default function SettingsPage() {
         </section>
       )}
 
-      {isSelf && (
+      {!inviteProfile && (
         <section className="settings-card">
           <h3>Projects</h3>
           <div className="project-list">
@@ -298,7 +339,10 @@ export default function SettingsPage() {
               <button key={p.id} className="project-row" onClick={() => navigate(`/projects/details?id=${p.id}`)}>
                 <div>
                   <p className="project-name">{p.name}</p>
-                  <span className="muted">Role: {p.role}</span>
+                  <span className="muted">
+                    Role: {p.role}
+                    {p.organization?.name ? ` • ${p.organization.name}` : ""}
+                  </span>
                 </div>
                 <span className="status-pill">{p.status}</span>
               </button>

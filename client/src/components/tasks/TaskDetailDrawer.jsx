@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuthContext } from "../../context/AuthContext.jsx";
 import { logActivity } from "../../api/activityApi.js";
 import axios from "../../api/axiosInstance";
+import DueDateEditor from "./DueDateEditor.jsx";
 
 const formatDate = (value) => {
   if (!value) return "No date";
@@ -56,6 +57,7 @@ export default function TaskDetailDrawer({
   onStatusChange,
   onAssigneesChange,
   onAttachmentsChange,
+  onDueDateChange,
   members = []
 }) {
   const { firebaseUser, activeOrganization } = useAuthContext();
@@ -275,6 +277,11 @@ export default function TaskDetailDrawer({
             <option>Completed</option>
           </select>
         </div>
+
+        <DueDateEditor
+          task={task}
+          onUpdate={(value) => onDueDateChange && onDueDateChange(value)}
+        />
 
         <div className="stack">
           <div className="label">Attachments</div>

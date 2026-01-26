@@ -47,15 +47,21 @@ export const createTask = async (req, res) => {
       ? assigneeIds.filter((id) => allowedAssigneeIds.has(id))
       : [];
 
+    const normalizedStatus = status || "todo";
+    const completedAt = normalizedStatus.toLowerCase().includes("complete")
+      ? new Date()
+      : null;
+
     const task = await prisma.task.create({
       data: {
         title,
         description,
-        status: status || "todo",
+        status: normalizedStatus,
         priority: priority || "medium",
         userId: req.user.id,
         projectId,
         dueDate: dueDate ? new Date(dueDate) : null,
+        completedAt,
         assignees: desiredAssignees.length
           ? { create: desiredAssignees.map((userId) => ({ userId })) }
           : undefined
@@ -108,6 +114,7 @@ export const getOrgTasks = async (req, res) => {
           status: true,
           priority: true,
           dueDate: true,
+          completedAt: true,
           projectId: true,
           userId: true,
           createdAt: true,
@@ -151,6 +158,7 @@ export const getOrgTasks = async (req, res) => {
           status: true,
           priority: true,
           dueDate: true,
+          completedAt: true,
           projectId: true,
           userId: true,
           createdAt: true,
@@ -190,9 +198,12 @@ export const getOrgTasks = async (req, res) => {
 export const updateTaskStatus = async (req, res) => {
   try {
     const { taskId } = req.params;
-    const { status } = req.body;
+    const { status, dueDate } = req.body;
 
-    if (!status) return res.status(400).json({ message: "Status is required" });
+    const hasDueDateField = Object.prototype.hasOwnProperty.call(req.body, "dueDate");
+    if (!status && !hasDueDateField) {
+      return res.status(400).json({ message: "Status or due date is required" });
+    }
 
     const task = await prisma.task.findUnique({
       where: { id: taskId },
@@ -214,9 +225,21 @@ export const updateTaskStatus = async (req, res) => {
       }
     }
 
+    const normalizedStatus = status ? status : task.status;
+    const completedAt =
+      status && normalizedStatus.toLowerCase().includes("complete")
+        ? new Date()
+        : status
+          ? null
+          : task.completedAt;
+
     const updated = await prisma.task.update({
       where: { id: taskId },
-      data: { status },
+      data: {
+        status: status || task.status,
+        dueDate: hasDueDateField ? (dueDate ? new Date(dueDate) : null) : task.dueDate,
+        completedAt
+      },
       include: {
         project: true,
         user: true,
@@ -237,7 +260,7 @@ export const updateTaskStatus = async (req, res) => {
 
     await deleteByPrefix(`tasks:${req.orgId}`);
 
-    if (task.status !== status) {
+    if (status && task.status !== status) {
       try {
         await createActivity({
           type: "TASK_STATUS_CHANGED",

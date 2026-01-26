@@ -8,6 +8,7 @@ import billingRoutes from "./src/routes/billingRoutes.js";
 import profileRoutes from "./src/routes/profileRoutes.js";
 import activityRoutes from "./src/routes/activityRoutes.js";
 import teamRoutes from "./src/routes/teamRoutes.js";
+import userRoutes from "./src/routes/userRoutes.js";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
@@ -63,6 +64,7 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/orgs", orgRoutes);
 app.use("/api/billing", billingRoutes);
 app.use("/api/profile", profileRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api/team", teamRoutes);
 

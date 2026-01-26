@@ -6,6 +6,8 @@ import axios from "../../api/axiosInstance";
 import TaskDetailDrawer from "../../components/tasks/TaskDetailDrawer.jsx";
 import CreateTaskDrawer from "../../components/tasks/CreateTaskDrawer.jsx";
 import { fetchTeamMembers } from "../../api/teamApi.js";
+import { useOverdueTasks } from "../../hooks/useOverdueTasks.js";
+import { isTaskOverdue } from "../../utils/taskUtils.js";
 
 const statusColor = {
   "not started": "danger",
@@ -29,14 +31,7 @@ const formatDate = (value) => {
   }
 };
 
-const initialsFrom = (name = "") => {
-  const parts = String(name).trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return "?";
-  if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
-  return (parts[0][0] + parts[1][0]).toUpperCase();
-};
-
-export default function AllTasksPage() {
+export default function OverdueTasksPage() {
   const { firebaseUser, activeOrganization } = useAuthContext();
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
@@ -72,7 +67,7 @@ export default function AllTasksPage() {
         setMembers(list);
       } catch (err) {
         console.error(err);
-        setError("Failed to load tasks.");
+        setError("Failed to load overdue tasks.");
       } finally {
         setLoading(false);
       }
@@ -80,12 +75,14 @@ export default function AllTasksPage() {
     load();
   }, [firebaseUser, activeOrganization]);
 
-  const tableRows = useMemo(() => {
-    return tasks.map((t) => ({
+  const overdueTasks = useOverdueTasks(tasks);
+
+  const rows = useMemo(() => {
+    return overdueTasks.map((t) => ({
       ...t,
-      statusLabel: toStatus(t.status)
+      statusLabel: toStatus(t.status),
     }));
-  }, [tasks]);
+  }, [overdueTasks]);
 
   return (
     <div className="page-stack">
@@ -94,7 +91,7 @@ export default function AllTasksPage() {
           <button className="btn-ghost" type="button" onClick={() => navigate(-1)}>
             Back
           </button>
-          <h1>All Tasks</h1>
+          <h1>Overdue Tasks</h1>
         </div>
         <div className="actions">
           <button className="btn-primary" onClick={() => setShowCreate(true)}>Create task</button>
@@ -115,11 +112,11 @@ export default function AllTasksPage() {
               <span>Project</span>
             </div>
             <div className="task-table__body">
-              {tableRows.length === 0 && <div className="muted" style={{ padding: 12 }}>No tasks yet.</div>}
-              {tableRows.map((t) => (
+              {rows.length === 0 && <div className="muted" style={{ padding: 12 }}>No overdue tasks.</div>}
+              {rows.map((t) => (
                 <div
                   key={t.id}
-                  className="task-row task-row--all"
+                  className={`task-row task-row--all ${isTaskOverdue(t) ? "task-row--overdue" : ""}`}
                   style={{ cursor: "pointer" }}
                   onClick={() => setActiveTask(t)}
                 >
@@ -138,7 +135,7 @@ export default function AllTasksPage() {
                       {(t.assignees || []).length === 0 && <span className="muted">Unassigned</span>}
                       {(t.assignees || []).map((a, idx) => (
                         <span key={a.userId || idx} className="assignee-pill" title={a.user?.name || a.user?.email}>
-                          {initialsFrom(a.user?.name || a.user?.email || "?")}
+                          {(a.user?.name || a.user?.email || "?").slice(0, 1).toUpperCase()}
                         </span>
                       ))}
                     </span>

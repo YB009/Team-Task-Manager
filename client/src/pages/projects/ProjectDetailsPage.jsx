@@ -211,6 +211,25 @@ export default function ProjectDetailsPage() {
             setError("Failed to update task status.");
           }
         }}
+        onDueDateChange={async (newDate) => {
+          if (!activeTask || !activeOrganization || !firebaseUser) return;
+          const nextDate = newDate ? new Date(newDate).toISOString() : null;
+          setTasks((prev) =>
+            prev.map((t) => (t.id === activeTask.id ? { ...t, dueDate: nextDate } : t))
+          );
+          setActiveTask((t) => (t ? { ...t, dueDate: nextDate } : t));
+          try {
+            const headers = { Authorization: `Bearer ${await firebaseUser.getIdToken()}` };
+            await axios.patch(
+              `/api/tasks/org/${activeOrganization.id}/${activeTask.id}`,
+              { dueDate: newDate || null },
+              { headers }
+            );
+          } catch (err) {
+            console.error(err);
+            setError("Failed to update due date.");
+          }
+        }}
         onAssigneesChange={async (assigneeIds) => {
           if (!activeTask || !activeOrganization || !firebaseUser) return;
           try {

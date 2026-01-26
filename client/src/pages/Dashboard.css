@@ -184,6 +184,11 @@
   border-radius: 14px;
   border: 1px solid #eef1f7;
   background: #fff;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  appearance: none;
 }
 
 .result-type {

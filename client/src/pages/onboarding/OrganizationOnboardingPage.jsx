@@ -1,6 +1,6 @@
 import "./OrganizationOnboardingPage.css";
 import { useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Building2, Mail, Sparkles } from "lucide-react";
 import axios from "../../api/axiosInstance";
 import { acceptTeamInvite } from "../../api/teamApi";
@@ -10,8 +10,9 @@ const INVITE_STORAGE_KEY = "ttm_invite_token";
 
 export default function OrganizationOnboardingPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { firebaseUser, refreshOrganizations } = useAuthContext();
+  const { firebaseUser, refreshOrganizations, logout } = useAuthContext();
   const [orgName, setOrgName] = useState("");
   const [inviteToken, setInviteToken] = useState(searchParams.get("token") || "");
   const [status, setStatus] = useState("");
@@ -20,6 +21,8 @@ export default function OrganizationOnboardingPage() {
   const inviteHint = useMemo(() => {
     return inviteToken ? "Invite token detected. Join to continue." : "";
   }, [inviteToken]);
+
+  const isOnboardingRoute = location.pathname.startsWith("/onboarding/organization");
 
   const handleCreate = async (event) => {
     event.preventDefault();
@@ -85,6 +88,17 @@ export default function OrganizationOnboardingPage() {
             <p className="org-onboarding__subtitle">
               Create an organization or join an existing one to continue.
             </p>
+          </div>
+          <div className="org-onboarding__actions">
+            {isOnboardingRoute ? (
+              <button type="button" className="org-onboarding__link" onClick={logout}>
+                Log out
+              </button>
+            ) : (
+              <button type="button" className="org-onboarding__link" onClick={() => navigate("/dashboard")}>
+                Back to dashboard
+              </button>
+            )}
           </div>
         </div>
 
