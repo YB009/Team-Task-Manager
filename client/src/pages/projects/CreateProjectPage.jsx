@@ -9,7 +9,7 @@ export default function CreateProjectPage() {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [status, setStatus] = useState("OnTrack");
+  const [status, setStatus] = useState("Active");
   const [cover, setCover] = useState(null);
   const [coverPreview, setCoverPreview] = useState("");
   const [error, setError] = useState("");
@@ -71,9 +71,9 @@ export default function CreateProjectPage() {
             <label className="form-field" style={{ flex: 1 }}>
               <span>Status</span>
               <select value={status} onChange={(e) => setStatus(e.target.value)}>
-                <option value="OnTrack">On track</option>
-                <option value="AtRisk">At risk</option>
+                <option value="Active">Active</option>
                 <option value="Delayed">Delayed</option>
+                <option value="Completed">Completed</option>
               </select>
             </label>
             <label className="form-field" style={{ flex: 1 }}>

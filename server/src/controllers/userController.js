@@ -99,17 +99,27 @@ export const getUserProfile = async (req, res) => {
       return project.tasks.every((t) => isTaskComplete(t.status));
     });
 
-    const projectPayload = sharedProjects.map((project) => ({
-      id: project.id,
-      name: project.name,
-      description: project.description,
-      role: project.userId === targetUser.id ? "Owner" : "Member",
-      status: completedProjects.find((p) => p.id === project.id) ? "Completed" : "Active",
-      organization: project.organization ? {
-        id: project.organization.id,
-        name: project.organization.name
-      } : null
-    }));
+    const projectPayload = sharedProjects.map((project) => {
+      const rawStatus = project.status || "";
+      const normalized = (() => {
+        const s = rawStatus.toLowerCase();
+        if (["completed", "done", "complete"].includes(s)) return "Completed";
+        if (["delayed", "at risk", "atrisk"].includes(s)) return "Delayed";
+        return "Active";
+      })();
+      const fallbackStatus = completedProjects.find((p) => p.id === project.id) ? "Completed" : "Active";
+      return {
+        id: project.id,
+        name: project.name,
+        description: project.description,
+        role: project.userId === targetUser.id ? "Owner" : "Member",
+        status: rawStatus ? normalized : fallbackStatus,
+        organization: project.organization ? {
+          id: project.organization.id,
+          name: project.organization.name
+        } : null
+      };
+    });
 
     res.json({
       user: {

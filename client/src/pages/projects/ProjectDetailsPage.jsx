@@ -196,6 +196,13 @@ export default function ProjectDetailsPage() {
         task={activeTask}
         onClose={() => setActiveTask(null)}
         members={members}
+        onDescriptionChange={(nextDescription) => {
+          if (!activeTask) return;
+          setTasks((prev) =>
+            prev.map((t) => (t.id === activeTask.id ? { ...t, description: nextDescription } : t))
+          );
+          setActiveTask((t) => (t ? { ...t, description: nextDescription } : t));
+        }}
         onStatusChange={async (newStatus) => {
           if (!activeTask || !activeOrganization || !firebaseUser) return;
           const label = normalizeStatus(newStatus);

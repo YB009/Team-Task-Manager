@@ -3,10 +3,19 @@
   gap: 18px;
 }
 
+.profile-backbar {
+  display: none;
+}
+
 .settings-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.profile-back {
+  display: none;
+  margin-bottom: 8px;
 }
 
 .settings-page--editing .settings-header .btn-primary {
@@ -200,6 +209,21 @@
   color: #312e81;
 }
 
+.status-pill--active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-pill--delayed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-pill--completed {
+  background: #e0e7ff;
+  color: #312e81;
+}
+
 .danger-zone {
   border: 1px solid #fee2e2;
 }
@@ -220,6 +244,30 @@
 }
 
 @media (max-width: 720px) {
+  .profile-backbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    padding: 10px 0 6px;
+    background: transparent;
+  }
+
+  .profile-backbar-title {
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .profile-backbar-btn {
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #e5e7eb;
+    color: #111827;
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+  }
+
   .profile-overview {
     grid-template-columns: 1fr;
   }
@@ -231,6 +279,9 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
+  }
+  .profile-back {
+    display: inline-flex;
   }
   .action-row {
     flex-direction: column;

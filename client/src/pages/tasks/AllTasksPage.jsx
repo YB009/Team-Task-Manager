@@ -157,6 +157,13 @@ export default function AllTasksPage() {
         showBack
         onBack={() => setActiveTask(null)}
         members={members}
+        onDescriptionChange={(nextDescription) => {
+          if (!activeTask) return;
+          setTasks((prev) =>
+            prev.map((t) => (t.id === activeTask.id ? { ...t, description: nextDescription } : t))
+          );
+          setActiveTask((t) => (t ? { ...t, description: nextDescription } : t));
+        }}
         onDueDateChange={async (newDate) => {
           if (!activeTask || !activeOrganization || !firebaseUser) return;
           const nextDate = newDate ? new Date(newDate).toISOString() : null;

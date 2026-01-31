@@ -5,7 +5,7 @@ import { createActivity } from "../services/activityService.js";
 
 export const createProject = async (req, res) => {
   try {
-    const { name, description, isPrivate, coverImage } = req.body;
+    const { name, description, isPrivate, coverImage, status } = req.body;
 
     // Defensive check in case middleware was skipped
     assertRole(req.membership, [Roles.OWNER, Roles.ADMIN]);
@@ -15,6 +15,7 @@ export const createProject = async (req, res) => {
       data: {
         name,
         description,
+        status: status || "Active",
         isPrivate: Boolean(isPrivate),
         userId: req.user.id,
         organizationId: req.orgId,
@@ -56,7 +57,7 @@ export const createProject = async (req, res) => {
 export const updateProject = async (req, res) => {
   try {
     const { projectId } = req.params;
-    const { name, description, isPrivate, coverImage } = req.body;
+    const { name, description, isPrivate, coverImage, status } = req.body;
 
     assertRole(req.membership, [Roles.OWNER, Roles.ADMIN]);
 
@@ -72,6 +73,7 @@ export const updateProject = async (req, res) => {
       data: {
         name: name ?? existing.name,
         description: description ?? existing.description,
+        status: status ?? existing.status,
         isPrivate: typeof isPrivate === "boolean" ? isPrivate : existing.isPrivate,
         coverImage: coverImage ?? existing.coverImage
       }
@@ -112,6 +114,7 @@ export const getOrgProjects = async (req, res) => {
           id: true,
           name: true,
           description: true,
+          status: true,
           coverImage: true,
           userId: true,
           organizationId: true,
@@ -136,6 +139,7 @@ export const getOrgProjects = async (req, res) => {
           id: true,
           name: true,
           description: true,
+          status: true,
           coverImage: true,
           userId: true,
           organizationId: true,

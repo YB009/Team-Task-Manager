@@ -55,6 +55,7 @@ export default function TaskDetailDrawer({
   showBack,
   onBack,
   onStatusChange,
+  onDescriptionChange,
   onAssigneesChange,
   onAttachmentsChange,
   onDueDateChange,
@@ -63,6 +64,8 @@ export default function TaskDetailDrawer({
   const { firebaseUser, activeOrganization } = useAuthContext();
   const [meta, setMeta] = useState({ objectives: [], comments: [] });
   const [attachments, setAttachments] = useState([]);
+  const [descriptionText, setDescriptionText] = useState("");
+  const [savingDescription, setSavingDescription] = useState(false);
   const [editingObjectiveId, setEditingObjectiveId] = useState(null);
   const [editingObjectiveText, setEditingObjectiveText] = useState("");
   const [editingCommentId, setEditingCommentId] = useState(null);
@@ -85,6 +88,10 @@ export default function TaskDetailDrawer({
 
   useEffect(() => {
     setAttachments(task?.attachments || []);
+  }, [task]);
+
+  useEffect(() => {
+    setDescriptionText(task?.description || "");
   }, [task]);
 
   const updateMeta = (next) => {
@@ -157,6 +164,25 @@ export default function TaskDetailDrawer({
     }
   };
 
+  const updateDescription = async () => {
+    if (!task?.id || !firebaseUser || !activeOrganization) return;
+    try {
+      setSavingDescription(true);
+      const headers = { Authorization: `Bearer ${await firebaseUser.getIdToken()}` };
+      await axios.patch(
+        `/api/tasks/org/${activeOrganization.id}/${task.id}`,
+        { description: descriptionText || "" },
+        { headers }
+      );
+      onDescriptionChange && onDescriptionChange(descriptionText || "");
+      pushActivity("TASK_UPDATED", "updated task description");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSavingDescription(false);
+    }
+  };
+
   const headerAccent = useMemo(() => {
     if (!task) return "#eef2ff";
     const status = (task.status || "").toLowerCase();
@@ -172,136 +198,158 @@ export default function TaskDetailDrawer({
   );
 
   return (
-    <div className="drawer drawer--panel">
-      <div className="drawer__header" style={{ justifyContent: "space-between", gap: 12 }}>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+    <div className="drawer drawer--panel task-drawer">
+      <div className="drawer__header task-drawer-header" style={{ justifyContent: "space-between", gap: 12 }}>
+        <div className="task-drawer-header__left">
           {showBack && (
             <button className="btn-ghost" onClick={onBack}>
               Back
             </button>
           )}
           <div>
-            <p className="label" style={{ margin: 0 }}>Task</p>
-            <h3 style={{ margin: 0 }}>{task.title}</h3>
+            <p className="label task-drawer-kicker">Task</p>
+            <h3 className="task-drawer-title">{task.title}</h3>
           </div>
         </div>
-        <button className="btn-ghost" onClick={onClose}>Close</button>
+        <button className="btn-ghost task-drawer-close" onClick={onClose}>Close</button>
       </div>
 
-      <div className="drawer__body stack">
-        <div
-          style={{
-            padding: 12,
-            borderRadius: 12,
-            background: headerAccent,
-            border: "1px solid #e5e7eb",
-            display: "grid",
-            gap: 10,
-          }}
-        >
-          <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "space-between" }}>
-            <div className="pill pill--muted" style={{ background: "#fff" }}>{task.priority || "Medium"}</div>
-            <div className="muted">{formatDate(task.dueDate || task.updatedAt)}</div>
+      <div className="drawer__body task-panel">
+        <div className="task-panel__section task-meta-card" style={{ background: headerAccent }}>
+          <div className="task-meta-card__top">
+            <span className="task-meta-pill">{task.priority || "Medium"}</span>
+            <span className="task-meta-date">📅 {formatDate(task.dueDate || task.updatedAt)}</span>
           </div>
-          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <div className="task-meta-card__bottom">
             <AvatarStack task={task} />
-            <div style={{ display: "flex", gap: 8 }}>
-              <Metric icon="OBJ" label="Objectives" value={meta.objectives.length} />
-              <Metric icon="FILE" label="Files" value={attachments.length} />
+            <div className="task-meta-badges">
+              <MetaBadge icon="🎯" label="Objectives" value={meta.objectives.length} />
+              <MetaBadge icon="📎" label="Files" value={attachments.length} />
             </div>
           </div>
         </div>
 
-        <div className="stack">
-          <div className="label">Project</div>
-          <div className="muted">{task.project?.name || "N/A"}</div>
-        </div>
-        <div className="stack">
-          <div className="label">Assignee</div>
-          {members.length === 0 && (
-            <div className="muted">{task.user?.name || task.user?.email || "Unassigned"}</div>
-          )}
-          {members.length > 0 && (
-            <div className="assignee-grid">
-              {members.map((member) => {
-                const userId = member.userId || member.id;
-                const checked = selectedAssignees.has(userId);
-                const displayName = member.name || member.email || "Unnamed";
-                return (
-                  <label
-                    key={userId}
-                    className={`assignee-card ${checked ? "is-selected" : ""}`}
-                  >
-                    <input
-                      className="assignee-check"
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => {
-                        const next = new Set(selectedAssignees);
-                        if (checked) {
-                          next.delete(userId);
-                        } else {
-                          next.add(userId);
-                        }
-                        onAssigneesChange && onAssigneesChange(Array.from(next));
-                      }}
-                    />
-                    <span className="assignee-avatar">
-                      {initialsFrom(displayName)}
-                    </span>
-                    <span className="assignee-meta">
-                      <span className="assignee-name">{displayName}</span>
-                      {member.email && <span className="assignee-email">{member.email}</span>}
-                    </span>
-                    <span className="assignee-state">{checked ? "Assigned" : "Tap to assign"}</span>
-                  </label>
-                );
-              })}
+        <div className="task-panel__section task-details-card">
+          <div className="task-details-grid">
+            <div>
+              <div className="label">Project</div>
+              <div className="project-badge">{task.project?.name || "N/A"}</div>
             </div>
-          )}
-        </div>
-        <div className="stack">
-          <div className="label">Description</div>
-          <div className="muted">{task.description || "No description yet."}</div>
-        </div>
-        <div className="stack">
-          <div className="label">Status</div>
-          <select
-            className="form-field"
-            style={{ padding: "10px 12px" }}
-            value={task.status || "Not Started"}
-            onChange={(e) => onStatusChange && onStatusChange(e.target.value)}
-          >
-            <option>Not Started</option>
-            <option>In Progress</option>
-            <option>Completed</option>
-          </select>
+            <div>
+              <div className="label">Description</div>
+              <div className="description-editor">
+                <textarea
+                  className="description-box"
+                  value={descriptionText}
+                  onChange={(e) => setDescriptionText(e.target.value)}
+                  placeholder="No description yet."
+                />
+                <div className="description-actions">
+                  <button
+                    className="btn-ghost description-save"
+                    type="button"
+                    onClick={updateDescription}
+                    disabled={savingDescription}
+                  >
+                    {savingDescription ? "Saving..." : "Update"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="task-details-assignees">
+            <div className="label">Assignee</div>
+            {members.length === 0 && (
+              <div className="muted">{task.user?.name || task.user?.email || "Unassigned"}</div>
+            )}
+            {members.length > 0 && (
+              <div className="assignee-grid">
+                {members.map((member) => {
+                  const userId = member.userId || member.id;
+                  const checked = selectedAssignees.has(userId);
+                  const displayName = member.name || member.email || "Unnamed";
+                  return (
+                    <label
+                      key={userId}
+                      className={`assignee-card ${checked ? "is-selected" : ""}`}
+                    >
+                      <input
+                        className="assignee-check"
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          const next = new Set(selectedAssignees);
+                          if (checked) {
+                            next.delete(userId);
+                          } else {
+                            next.add(userId);
+                          }
+                          onAssigneesChange && onAssigneesChange(Array.from(next));
+                        }}
+                      />
+                      <span className="assignee-avatar">
+                        {initialsFrom(displayName)}
+                      </span>
+                      <span className="assignee-meta">
+                        <span className="assignee-name">{displayName}</span>
+                        {member.email && <span className="assignee-email">{member.email}</span>}
+                      </span>
+                      <span className="assignee-state">{checked ? "Assigned" : "Tap to assign"}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
-        <DueDateEditor
-          task={task}
-          onUpdate={(value) => onDueDateChange && onDueDateChange(value)}
-        />
+        <div className="task-panel__section task-controls-card">
+          <div className="task-controls-grid">
+            <div className="task-control">
+              <div className="label">Status</div>
+              <select
+                className="status-select"
+                value={task.status || "Not Started"}
+                onChange={(e) => onStatusChange && onStatusChange(e.target.value)}
+              >
+                <option>Not Started</option>
+                <option>In Progress</option>
+                <option>Completed</option>
+              </select>
+            </div>
+            <div className="task-control">
+              <DueDateEditor
+                task={task}
+                onUpdate={(value) => onDueDateChange && onDueDateChange(value)}
+              />
+            </div>
+          </div>
+        </div>
 
-        <div className="stack">
-          <div className="label">Attachments</div>
+        <div className="task-panel__section task-attachments-card">
+          <div className="task-section-title">
+            <span>Attachments</span>
+          </div>
           <AttachmentGrid attachments={attachments} onRemove={removeAttachment} />
-          <label className="upload-drop">
+          <label className="upload-drop task-upload-drop">
             <input
               type="file"
               style={{ display: "none" }}
               onChange={(e) => handleAttachment(e.target.files?.[0])}
             />
-            <span>Upload file</span>
+            <span>Drop files here or click to upload</span>
           </label>
         </div>
 
-        <div className="stack">
-          <div className="label">Objectives</div>
-          <div className="stack">
-            {meta.objectives.length === 0 && <p className="muted">No objectives yet.</p>}
+        <div className="task-panel__section task-objectives-card">
+          <div className="task-section-title">
+            <span>Objectives</span>
+            <span className="task-section-count">{meta.objectives.length}</span>
+          </div>
+          <div className="task-list">
+            {meta.objectives.length === 0 && <div className="empty-state">🎯 No objectives yet.</div>}
             {meta.objectives.map((o) => (
-              <label key={o.id} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <label key={o.id} className="task-list-item">
                 <input type="checkbox" />
                 {editingObjectiveId === o.id ? (
                   <>
@@ -332,7 +380,7 @@ export default function TaskDetailDrawer({
                   </>
                 ) : (
                   <>
-                    <span style={{ flex: 1 }}>{o.text}</span>
+                    <span className="task-list-text">{o.text}</span>
                     <button
                       className="btn-ghost"
                       type="button"
@@ -371,12 +419,15 @@ export default function TaskDetailDrawer({
           </div>
         </div>
 
-        <div className="stack">
-          <div className="label">Comments</div>
-          <div className="comment-stack">
-            {meta.comments.length === 0 && <p className="muted">No comments yet.</p>}
+        <div className="task-panel__section task-comments-card">
+          <div className="task-section-title">
+            <span>Comments</span>
+            <span className="task-section-count">{meta.comments.length}</span>
+          </div>
+          <div className="comment-thread">
+            {meta.comments.length === 0 && <div className="empty-state">💬 No comments yet.</div>}
             {meta.comments.map((c) => (
-              <div key={c.id} className="comment-chip">
+              <div key={c.id} className="comment-bubble">
                 {c.author && (
                   <div className="comment-author">
                     <span className="comment-avatar">
@@ -396,68 +447,74 @@ export default function TaskDetailDrawer({
                       value={editingCommentText}
                       onChange={(e) => setEditingCommentText(e.target.value)}
                     />
-                    <button
-                      className="btn-ghost"
-                      type="button"
-                      onClick={() => {
-                        const next = {
-                          ...meta,
-                          comments: meta.comments.map((item) =>
-                            item.id === c.id ? { ...item, text: editingCommentText.trim() } : item
-                          )
-                        };
-                        updateMeta(next);
-                        setEditingCommentId(null);
-                        setEditingCommentText("");
-                        pushActivity("COMMENT_UPDATED", "updated a comment");
-                      }}
-                    >
-                      Save
-                    </button>
+                    <div className="comment-actions">
+                      <button
+                        className="btn-ghost"
+                        type="button"
+                        onClick={() => {
+                          const next = {
+                            ...meta,
+                            comments: meta.comments.map((item) =>
+                              item.id === c.id ? { ...item, text: editingCommentText.trim() } : item
+                            )
+                          };
+                          updateMeta(next);
+                          setEditingCommentId(null);
+                          setEditingCommentText("");
+                          pushActivity("COMMENT_UPDATED", "updated a comment");
+                        }}
+                      >
+                        Save
+                      </button>
+                    </div>
                   </>
                 ) : (
                   <>
-                    <span style={{ flex: 1 }}>{c.text}</span>
-                    <button
-                      className="btn-ghost"
-                      type="button"
-                      onClick={() => {
-                        setEditingCommentId(c.id);
-                        setEditingCommentText(c.text);
-                      }}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="btn-ghost"
-                      type="button"
-                      onClick={() => {
-                        const next = {
-                          ...meta,
-                          comments: meta.comments.filter((item) => item.id !== c.id)
-                        };
-                        updateMeta(next);
-                        pushActivity("COMMENT_REMOVED", "removed a comment");
-                      }}
-                    >
-                      Remove
-                    </button>
+                    <span className="comment-text">{c.text}</span>
+                    <div className="comment-actions">
+                      <button
+                        className="btn-ghost"
+                        type="button"
+                        onClick={() => {
+                          setEditingCommentId(c.id);
+                          setEditingCommentText(c.text);
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="btn-ghost"
+                        type="button"
+                        onClick={() => {
+                          const next = {
+                            ...meta,
+                            comments: meta.comments.filter((item) => item.id !== c.id)
+                          };
+                          updateMeta(next);
+                          pushActivity("COMMENT_REMOVED", "removed a comment");
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </>
                 )}
               </div>
             ))}
           </div>
-          <CommentInput
-            onAdd={(text) => {
-              const author = {
-                name: firebaseUser?.displayName || task.user?.name || task.user?.email || "User",
-                email: firebaseUser?.email || task.user?.email || ""
-              };
-              const nextItem = { id: `${Date.now()}-${Math.random()}`, text, author };
-              updateMeta({ ...meta, comments: [...meta.comments, nextItem] });
-              pushActivity("COMMENT_ADDED", "added a comment");
-            }}
-          />
+          <div className="task-comments-footer">
+            <CommentInput
+              onAdd={(text) => {
+                const author = {
+                  name: firebaseUser?.displayName || task.user?.name || task.user?.email || "User",
+                  email: firebaseUser?.email || task.user?.email || ""
+                };
+                const nextItem = { id: `${Date.now()}-${Math.random()}`, text, author };
+                updateMeta({ ...meta, comments: [...meta.comments, nextItem] });
+                pushActivity("COMMENT_ADDED", "added a comment");
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -467,7 +524,7 @@ export default function TaskDetailDrawer({
 const ObjectiveInput = ({ onAdd }) => {
   const [text, setText] = useState("");
   return (
-    <div style={{ display: "flex", gap: 8 }}>
+    <div className="task-inline-input">
       <input
         className="form-field"
         style={{ padding: 8 }}
@@ -492,7 +549,7 @@ const ObjectiveInput = ({ onAdd }) => {
 const CommentInput = ({ onAdd }) => {
   const [text, setText] = useState("");
   return (
-    <div style={{ display: "flex", gap: 8 }}>
+    <div className="task-inline-input">
       <input
         className="form-field"
         style={{ padding: 8 }}
@@ -547,52 +604,35 @@ const AvatarStack = ({ task }) => {
   );
 };
 
-const Metric = ({ icon, label, value }) => (
-  <div
-    style={{
-      display: "flex",
-      alignItems: "center",
-      gap: 4,
-      padding: "6px 10px",
-      borderRadius: 10,
-      background: "#fff",
-      border: "1px solid #e5e7eb",
-      fontSize: 13,
-    }}
-  >
-    <span>{icon}</span>
-    <span style={{ color: "#0f172a", fontWeight: 700 }}>{value}</span>
-    <span className="muted">{label}</span>
+const MetaBadge = ({ icon, label, value }) => (
+  <div className="task-meta-badge">
+    <span className="task-meta-icon">{icon}</span>
+    <span className="task-meta-value">{value}</span>
+    <span className="task-meta-label">{label}</span>
   </div>
 );
 
 const AttachmentGrid = ({ attachments, onRemove }) => {
   if (!attachments || attachments.length === 0) {
-    return <p className="muted">No files yet.</p>;
+    return <div className="empty-state">📎 No files yet.</div>;
   }
   return (
-    <div style={{ display: "grid", gap: 10 }}>
-      <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))" }}>
+    <div className="attachment-grid">
+      <div className="attachment-grid__items">
         {attachments.map((a, idx) => (
           <div
             key={a.id || `${a.name}-${idx}`}
-            style={{
-              border: "1px solid #e5e7eb",
-              borderRadius: 10,
-              padding: 8,
-              background: "#f8fafc",
-              position: "relative",
-            }}
+            className="attachment-card"
           >
             {a.dataUrl?.startsWith("data:image") && (
               <img
                 src={a.dataUrl}
                 alt={a.name}
-                style={{ width: "100%", height: 64, objectFit: "cover", borderRadius: 6, marginBottom: 6 }}
+                className="attachment-preview"
               />
             )}
-            <div style={{ fontWeight: 600, fontSize: 13 }}>{a.name}</div>
-            <div className="muted" style={{ fontSize: 12 }}>
+            <div className="attachment-name">{a.name}</div>
+            <div className="muted attachment-size">
               {Math.round(a.size / 1024)}kb
             </div>
             <button
@@ -605,7 +645,7 @@ const AttachmentGrid = ({ attachments, onRemove }) => {
             <a
               href={a.dataUrl}
               download={a.name}
-              style={{ display: "inline-flex", marginTop: 6, fontSize: 12, color: "#4338ca" }}
+              className="attachment-download"
             >
               Download
             </a>

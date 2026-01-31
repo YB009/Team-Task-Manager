@@ -1,13 +1,30 @@
 import "./ProjectCard.css";
 
 const statusColor = {
-  OnTrack: "#22c55e",
-  AtRisk: "#f59e0b",
+  Active: "#22c55e",
   Delayed: "#ef4444",
+  Completed: "#6366f1",
+};
+
+const normalizeStatus = (status = "") => {
+  const s = status.toLowerCase();
+  if (["completed", "done", "complete"].includes(s)) return "Completed";
+  if (["delayed", "at risk", "atrisk"].includes(s)) return "Delayed";
+  return "Active";
 };
 
 export default function ProjectCard({ project, onSelect }) {
-  const { name, description, status = "OnTrack", progress = 0, stats = {}, tags = [], coverImage } = project;
+  const {
+    name,
+    description,
+    status = "Active",
+    progress = 0,
+    stats = {},
+    tags = [],
+    coverImage,
+  } = project;
+
+  const statusLabel = normalizeStatus(status);
 
   return (
     <div className="project-card" onClick={onSelect} role="button" tabIndex={0}>
@@ -16,20 +33,27 @@ export default function ProjectCard({ project, onSelect }) {
         style={{
           background: coverImage
             ? `center/cover no-repeat url(${coverImage})`
-            : "linear-gradient(135deg, #fef3c7, #e0f2fe)"
+            : "linear-gradient(135deg, #fef3c7, #e0f2fe)",
         }}
       />
       <div className="project-card__body">
         <div className="project-card__header">
           <div>
-            <p className="project-card__eyebrow">{project.dueLabel || "Updated"} • {project.date || "Today"}</p>
+            <p className="project-card__eyebrow">
+              {project.dueLabel || "Updated"} • {project.date || "Today"}
+            </p>
             <h3 className="project-card__title">{name}</h3>
           </div>
-          <span className="project-card__status" style={{ color: statusColor[status] || "#10b981" }}>
-            ● {status === "OnTrack" ? "On track" : status}
+          <span
+            className="project-card__status"
+            style={{ color: statusColor[statusLabel] || "#10b981" }}
+          >
+            ● {statusLabel}
           </span>
         </div>
-        <p className="project-card__desc">{description || "Soft card UI with light neutral background and muted copy."}</p>
+        <p className="project-card__desc">
+          {description || "Soft card UI with light neutral background and muted copy."}
+        </p>
         <div className="project-card__meta">
           <div className="project-card__tags">
             {tags.map((tag) => (

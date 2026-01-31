@@ -6,7 +6,13 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 40%, #f5f3ff 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(248, 250, 252, 0.92) 0%,
+    rgba(238, 242, 255, 0.86) 40%,
+    rgba(245, 243, 255, 0.92) 100%
+  );
+  backdrop-filter: blur(8px);
   border: 1px solid #e7e8f1;
 }
 
@@ -55,7 +61,8 @@
 }
 
 .stat-card {
-  background: #fff;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(8px);
   border-radius: 16px;
   padding: 14px;
   display: flex;
@@ -129,7 +136,8 @@
   padding: 10px 12px;
   border-radius: 14px;
   border: 1px solid #e5e7eb;
-  background: #f8fafc;
+  background: rgba(248, 250, 252, 0.78);
+  backdrop-filter: blur(6px);
 }
 
 .search-input input {
@@ -183,7 +191,8 @@
   padding: 12px;
   border-radius: 14px;
   border: 1px solid #eef1f7;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
   width: 100%;
   text-align: left;
   cursor: pointer;
@@ -238,7 +247,8 @@
   padding: 12px;
   border-radius: 12px;
   border: 1px solid #eef1f7;
-  background: #f8fafc;
+  background: rgba(248, 250, 252, 0.8);
+  backdrop-filter: blur(8px);
 }
 
 .activity-icon {

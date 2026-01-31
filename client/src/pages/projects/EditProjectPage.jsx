@@ -14,7 +14,7 @@ export default function EditProjectPage() {
 
   const [name, setName] = useState(projectFromState?.name || "");
   const [description, setDescription] = useState(projectFromState?.description || "");
-  const [status, setStatus] = useState(projectFromState?.status || "OnTrack");
+  const [status, setStatus] = useState(projectFromState?.status || "Active");
   const [coverPreview, setCoverPreview] = useState(projectFromState?.coverImage || "");
   const [coverImage, setCoverImage] = useState(null);
   const [error, setError] = useState("");
@@ -33,7 +33,7 @@ export default function EditProjectPage() {
         if (found) {
           setName(found.name);
           setDescription(found.description || "");
-          setStatus(found.status || "OnTrack");
+          setStatus(found.status || "Active");
           setCoverPreview(found.coverImage || "");
         }
       } catch (err) {
@@ -100,9 +100,9 @@ export default function EditProjectPage() {
             <label className="form-field" style={{ flex: 1 }}>
               <span>Status</span>
               <select value={status} onChange={(e) => setStatus(e.target.value)}>
-                <option value="OnTrack">On track</option>
-                <option value="AtRisk">At risk</option>
+                <option value="Active">Active</option>
                 <option value="Delayed">Delayed</option>
+                <option value="Completed">Completed</option>
               </select>
             </label>
             <label className="form-field" style={{ flex: 1 }}>

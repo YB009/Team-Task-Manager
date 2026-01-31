@@ -65,6 +65,28 @@ export default function Sidebar() {
             {orgRole && <span className="workspace-role">{orgRole}</span>}
           </div>
         </button>
+        <select
+          className="sidebar__workspace-select"
+          value={activeOrganization?.id || ""}
+          onChange={(e) => {
+            const next = e.target.value;
+            if (next === "__create__") {
+              window.location.href = "/organizations";
+              return;
+            }
+            setActiveOrganization(next);
+          }}
+        >
+          <option value="" disabled>
+            Select organization
+          </option>
+          {(organizations || []).map((org) => (
+            <option key={org.id} value={org.id}>
+              {org.name}
+            </option>
+          ))}
+          <option value="__create__">+ Create or join</option>
+        </select>
         {orgOpen && (
           <div className="sidebar__workspace-menu">
             <div className="sidebar__workspace-title">Organizations</div>

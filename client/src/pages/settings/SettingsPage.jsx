@@ -4,14 +4,23 @@ import { useAuthContext } from "../../context/AuthContext.jsx";
 import axios from "../../api/axiosInstance";
 import { useNavigate, useParams } from "react-router-dom";
 import { PencilLine, CheckCircle2 } from "lucide-react";
+import { useProfile } from "../../context/ProfileContext.jsx";
 
 const isTaskComplete = (status = "") => {
   const normalized = status.toLowerCase();
   return ["done", "completed", "complete", "closed"].includes(normalized);
 };
 
+const normalizeProjectStatus = (status = "") => {
+  const s = status.toLowerCase();
+  if (["completed", "done", "complete"].includes(s)) return "Completed";
+  if (["delayed", "at risk", "atrisk"].includes(s)) return "Delayed";
+  return "Active";
+};
+
 export default function SettingsPage({ profileUserId, readOnly = false, inviteProfile = null }) {
   const { firebaseUser, user, logout, activeOrganization } = useAuthContext();
+  const { closeProfile } = useProfile();
   const { userId } = useParams();
   const navigate = useNavigate();
   const effectiveUserId = profileUserId || userId;
@@ -140,12 +149,15 @@ export default function SettingsPage({ profileUserId, readOnly = false, invitePr
         });
 
         setProjects(
-          allProjects.map((p) => ({
-            ...p,
-            role: p.userId === profileData.user?.id ? "Owner" : "Member",
-            status: completedProjects.find((c) => c.id === p.id) ? "Completed" : "Active",
-            organization: org ? { id: org.id, name: org.name } : null
-          }))
+          allProjects.map((p) => {
+            const derivedStatus = completedProjects.find((c) => c.id === p.id) ? "Completed" : "Active";
+            return {
+              ...p,
+              role: p.userId === profileData.user?.id ? "Owner" : "Member",
+              status: normalizeProjectStatus(p.status || derivedStatus),
+              organization: org ? { id: org.id, name: org.name } : null
+            };
+          })
         );
       } catch (err) {
         console.error(err);
@@ -188,6 +200,14 @@ export default function SettingsPage({ profileUserId, readOnly = false, invitePr
 
   const avatarFallback = firebaseUser?.photoURL || "https://i.pravatar.cc/100?img=5";
   const avatarSrc = form.avatarUrl || avatarFallback;
+  const showDrawerBack = typeof closeProfile === "function" && (profileUserId || readOnly || !isSelf);
+  const handleBack = () => {
+    if (typeof closeProfile === "function") {
+      closeProfile();
+      return;
+    }
+    navigate(-1);
+  };
 
   if (loading) {
     return <div className="page-stack"><div className="muted">Loading profile...</div></div>;
@@ -195,8 +215,21 @@ export default function SettingsPage({ profileUserId, readOnly = false, invitePr
 
   return (
     <div className={`page-stack settings-page ${editing ? "settings-page--editing" : ""}`}>
+      {showDrawerBack && (
+        <div className="profile-backbar">
+          <button className="btn-ghost profile-backbar-btn" onClick={handleBack}>
+            Back
+          </button>
+          <span className="profile-backbar-title">Profile</span>
+        </div>
+      )}
       <div className="settings-header">
         <div>
+          {!isSelf && (
+            <button className="btn-ghost profile-back" onClick={handleBack}>
+              Back
+            </button>
+          )}
           <h1>{isSelf ? "My Profile" : "Profile"}</h1>
           <p className="muted">
             {isSelf ? "Your workspace identity and contribution summary." : "Workspace profile overview."}
@@ -330,7 +363,7 @@ export default function SettingsPage({ profileUserId, readOnly = false, invitePr
         </section>
       )}
 
-      {!inviteProfile && (
+      {isSelf && !inviteProfile && (
         <section className="settings-card">
           <h3>Projects</h3>
           <div className="project-list">
@@ -344,7 +377,9 @@ export default function SettingsPage({ profileUserId, readOnly = false, invitePr
                     {p.organization?.name ? ` • ${p.organization.name}` : ""}
                   </span>
                 </div>
-                <span className="status-pill">{p.status}</span>
+                <span className={`status-pill status-pill--${(p.status || "active").toLowerCase()}`}>
+                  {p.status || "Active"}
+                </span>
               </button>
             ))}
           </div>

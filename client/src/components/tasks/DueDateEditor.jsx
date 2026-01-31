@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export default function DueDateEditor({ task, onUpdate }) {
+export default function DueDateEditor({ task, onUpdate, className = "" }) {
   const [date, setDate] = useState("");
 
   useEffect(() => {
@@ -17,19 +17,18 @@ export default function DueDateEditor({ task, onUpdate }) {
   }, [task]);
 
   return (
-    <div className="stack">
+    <div className={`due-date-editor ${className}`}>
       <label className="label" htmlFor="due-date-editor">Due date</label>
-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      <div className="due-date-editor__row due-date-editor__stack">
         <input
           id="due-date-editor"
           type="date"
           className="form-field"
-          style={{ padding: "10px 12px" }}
           value={date}
           onChange={(e) => setDate(e.target.value)}
         />
         <button
-          className="btn-ghost"
+          className="btn-ghost due-date-editor__button"
           type="button"
           onClick={() => onUpdate && onUpdate(date)}
         >

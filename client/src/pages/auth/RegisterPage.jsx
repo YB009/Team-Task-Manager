@@ -9,7 +9,7 @@ import {
   facebookProvider,
   twitterProvider,
 } from "../../api/firebase";
-import { signInWithRedirect, createUserWithEmailAndPassword } from "firebase/auth";
+import { signInWithRedirect, createUserWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -56,9 +56,27 @@ export default function RegisterPage() {
     try {
       setLoading(true);
       pendingOAuthRef.current = true;
-      sessionStorage.setItem(redirectFlag, "1");
-      await signInWithRedirect(auth, provider);
+      const isLocalhost = window.location.hostname === "localhost";
+      if (isLocalhost) {
+        await signInWithPopup(auth, provider);
+        navigate("/oauth/success");
+      } else {
+        sessionStorage.setItem(redirectFlag, "1");
+        await signInWithRedirect(auth, provider);
+      }
     } catch (err) {
+      if (err?.code === "auth/popup-blocked" || err?.code === "auth/popup-closed-by-user") {
+        try {
+          sessionStorage.setItem(redirectFlag, "1");
+          await signInWithRedirect(auth, provider);
+          return;
+        } catch (redirectErr) {
+          pendingOAuthRef.current = false;
+          sessionStorage.removeItem(redirectFlag);
+          setError(redirectErr.message || "Social signup failed");
+          return;
+        }
+      }
       pendingOAuthRef.current = false;
       sessionStorage.removeItem(redirectFlag);
       setError(err.message || "Social signup failed");

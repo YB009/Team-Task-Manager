@@ -1,15 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../context/AuthContext.jsx";
-// Antigravity removed here to avoid WebGL context loss during OAuth flow
+import Antigravity from "../../components/Antigravity.jsx";
 
 export default function OAuthSuccessPage() {
   const navigate = useNavigate();
-  const { firebaseUser, loading } = useAuthContext();
+  const { firebaseUser, loading, bootstrapped } = useAuthContext();
   const [readyToRedirect, setReadyToRedirect] = useState(false);
-  const [showCanvas, setShowCanvas] = useState(false);
+  const [showCanvas, setShowCanvas] = useState(true);
   const [pointer, setPointer] = useState({ x: 0.5, y: 0.5 });
   const [blink, setBlink] = useState(false);
+  const prefersReducedMotion = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }, []);
 
   useEffect(() => {
     const track = (e) => {
@@ -37,13 +41,9 @@ export default function OAuthSuccessPage() {
   }, []);
 
   useEffect(() => {
-    if (loading) return;
-    if (!firebaseUser) {
-      navigate("/login", { replace: true });
-      return;
-    }
-    setReadyToRedirect(true);
-  }, [firebaseUser, loading, navigate]);
+    if (loading || !bootstrapped) return;
+    setReadyToRedirect(Boolean(firebaseUser));
+  }, [firebaseUser, loading, bootstrapped]);
 
   const handleContinue = () => {
     if (document.hidden) return;
@@ -53,8 +53,26 @@ export default function OAuthSuccessPage() {
 
   return (
     <div className="antigravity-bg">
-      {showCanvas && (
-        <div className="antigravity-canvas" />
+      {showCanvas && !prefersReducedMotion && (
+        <div className="antigravity-canvas">
+          <Antigravity
+            count={250}
+            magnetRadius={6}
+            ringRadius={8}
+            waveSpeed={0.4}
+            waveAmplitude={1}
+            particleSize={1.6}
+            lerpSpeed={0.05}
+            color="#918890"
+            autoAnimate
+            particleVariance={1}
+            rotationSpeed={0}
+            depthFactor={1}
+            pulseSpeed={3}
+            particleShape="box"
+            fieldStrength={10}
+          />
+        </div>
       )}
       <div className="oauth-hero" onClick={handleContinue} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && handleContinue()}>
         <Eyes pointer={pointer} blink={blink} />

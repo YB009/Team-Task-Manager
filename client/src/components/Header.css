@@ -4,11 +4,15 @@
   align-items: center;
   gap: 12px;
   padding: 14px 18px;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(15, 23, 42, 0.06);
   border: 1px solid #eef1f7;
   margin-bottom: 16px;
+  position: relative;
+  z-index: 60;
+  overflow: visible;
 }
 
 .header-brand {
@@ -128,7 +132,7 @@
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
   border-radius: 14px;
   padding: 8px 0;
-  z-index: 20;
+  z-index: 70;
 }
 
 .org-switch__label {
@@ -252,7 +256,7 @@
   border-radius: 14px;
   min-width: 200px;
   padding: 6px 0;
-  z-index: 20;
+  z-index: 70;
 }
 
 .profile-menu__section {

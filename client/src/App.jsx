@@ -25,6 +25,7 @@ import NotFoundPage from "./pages/NotFoundPage.jsx";
 import OrganizationOnboardingPage from "./pages/onboarding/OrganizationOnboardingPage.jsx";
 import Drawer from "./components/ui/Drawer.jsx";
 import { useProfile } from "./context/ProfileContext.jsx";
+import AppBackground from "./components/background/AppBackground.jsx";
 
 function App() {
   const { firebaseUser, loading, hasOrganization, bootstrapped } = useAuthContext();
@@ -67,6 +68,8 @@ function App() {
 
   return (
     <>
+      <AppBackground />
+      <div className="app-surface">
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -116,6 +119,7 @@ function App() {
           inviteProfile={profileState.invite}
         />
       </Drawer>
+      </div>
     </>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { signInWithRedirect, signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithRedirect, signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "../../components/Layout/AuthLayout.jsx";
 import {
@@ -60,9 +60,27 @@ export default function LoginPage() {
     try {
       setLoading(true);
       pendingOAuthRef.current = true;
-      sessionStorage.setItem(redirectFlag, "1");
-      await signInWithRedirect(auth, provider);
+      const isLocalhost = window.location.hostname === "localhost";
+      if (isLocalhost) {
+        await signInWithPopup(auth, provider);
+        navigate("/oauth/success");
+      } else {
+        sessionStorage.setItem(redirectFlag, "1");
+        await signInWithRedirect(auth, provider);
+      }
     } catch (err) {
+      if (err?.code === "auth/popup-blocked" || err?.code === "auth/popup-closed-by-user") {
+        try {
+          sessionStorage.setItem(redirectFlag, "1");
+          await signInWithRedirect(auth, provider);
+          return;
+        } catch (redirectErr) {
+          pendingOAuthRef.current = false;
+          sessionStorage.removeItem(redirectFlag);
+          setError(redirectErr.message || "Social login failed");
+          return;
+        }
+      }
       pendingOAuthRef.current = false;
       sessionStorage.removeItem(redirectFlag);
       setError(err.message || "Social login failed");
