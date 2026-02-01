@@ -68,14 +68,9 @@ export default function LoginPage() {
     try {
       setLoading(true);
       pendingOAuthRef.current = true;
-      const isLocalhost = window.location.hostname === "localhost";
-      if (isLocalhost) {
-        await signInWithPopup(auth, provider);
-        navigate("/oauth/success");
-      } else {
-        sessionStorage.setItem(redirectFlag, "1");
-        await signInWithRedirect(auth, provider);
-      }
+      // Use popup for all environments to avoid browser redirect/state-loss issues
+      await signInWithPopup(auth, provider);
+      navigate("/oauth/success");
     } catch (err) {
       if (err?.code === "auth/popup-blocked" || err?.code === "auth/popup-closed-by-user") {
         try {
@@ -142,10 +137,8 @@ export default function LoginPage() {
             <span>Continue with Twitter</span>
           </button>
         </div>
-        <div className="auth-footer">
-          <p>
-            Don't have an account? <Link to="/signup">Sign up</Link>
-          </p>
+        <div className="auth-footnote">
+          Don't have an account? <Link to="/signup">Sign up</Link>
         </div>
       </form>
     </AuthLayout>
