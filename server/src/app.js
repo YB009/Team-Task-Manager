@@ -40,20 +40,17 @@ app.use((req, res, next) => {
   next();
 });
 
-const allowedOrigins = [
-  process.env.CLIENT_URL || "http://localhost:5173",
-  "http://localhost:5173",
-  "http://localhost:4173",
-  "https://team-task-manager-p15t.onrender.com"
-];
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(",").map((origin) => origin.trim())
+  : [
+      process.env.CLIENT_URL || "http://localhost:5173",
+      "http://localhost:5173",
+      "http://localhost:4173",
+      "https://team-task-manager-p15t.onrender.com",
+    ];
 
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error("Not allowed by CORS"));
-  },
+  origin: allowedOrigins,
   credentials: true,
 }));
 
