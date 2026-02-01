@@ -60,9 +60,10 @@ app.use(
     secret: process.env.SESSION_SECRET || "dev_secret_key",
     resave: false,
     saveUninitialized: false,
+    proxy: true, // Ensure proxy is trusted for secure cookies
     cookie: {
       secure: process.env.NODE_ENV === "production", // Secure in production
-      sameSite: "lax", // CSRF protection
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // 'none' required for cross-site (Render)
     },
   })
 );
