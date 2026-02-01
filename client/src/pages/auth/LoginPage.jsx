@@ -142,4 +142,12 @@ export default function LoginPage() {
             <span>Continue with Twitter</span>
           </button>
         </div>
-        <div className="
+        <div className="auth-footer">
+          <p>
+            Don't have an account? <Link to="/signup">Sign up</Link>
+          </p>
+        </div>
+      </form>
+    </AuthLayout>
+  );
+}
