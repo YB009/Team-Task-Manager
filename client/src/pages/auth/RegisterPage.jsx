@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import AuthLayout from "../../components/Layout/AuthLayout.jsx";
 import { useAuthContext } from "../../context/AuthContext.jsx";
@@ -9,7 +9,7 @@ import {
   facebookProvider,
   twitterProvider,
 } from "../../api/firebase";
-import { signInWithRedirect, createUserWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { signInWithRedirect, createUserWithEmailAndPassword, signInWithPopup, getRedirectResult } from "firebase/auth";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -26,6 +26,25 @@ export default function RegisterPage() {
     facebook: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/facebook/facebook-original.svg",
     twitter: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/twitter/twitter-original.svg",
   };
+
+  useEffect(() => {
+    getRedirectResult(auth).catch((err) => {
+      console.error("Redirect signup error:", err);
+      setError(err.message || "Signup failed");
+      sessionStorage.removeItem(redirectFlag);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (firebaseUser) {
+      if (sessionStorage.getItem(redirectFlag)) {
+        sessionStorage.removeItem(redirectFlag);
+        navigate("/oauth/success");
+      } else if (!pendingOAuthRef.current) {
+        navigate("/dashboard");
+      }
+    }
+  }, [firebaseUser, navigate]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -80,16 +99,6 @@ export default function RegisterPage() {
     }
   };
 
-  if (firebaseUser && sessionStorage.getItem(redirectFlag)) {
-    sessionStorage.removeItem(redirectFlag);
-    navigate("/oauth/success");
-    return null;
-  }
-  if (firebaseUser && !pendingOAuthRef.current) {
-    navigate("/dashboard");
-    return null;
-  }
-
   return (
     <AuthLayout title="Create your account">
       <form className="auth-actions" onSubmit={handleSubmit}>
@@ -127,7 +136,7 @@ export default function RegisterPage() {
             <span>Continue with Twitter</span>
           </button>
         </div>
-        <div className="auth-footnote">
+        <div className="auth-footnote" style={{ position: "relative", zIndex: 10 }}>
           Already have an account? <Link to="/login">Sign in</Link>
         </div>
       </form>

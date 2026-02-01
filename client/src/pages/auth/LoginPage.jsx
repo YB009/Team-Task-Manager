@@ -137,7 +137,7 @@ export default function LoginPage() {
             <span>Continue with Twitter</span>
           </button>
         </div>
-        <div className="auth-footnote">
+        <div className="auth-footnote" style={{ position: "relative", zIndex: 10 }}>
           Don't have an account? <Link to="/signup">Sign up</Link>
         </div>
       </form>
