@@ -26,8 +26,9 @@ const app = express();
 app.set("trust proxy", 1);
 
 // Debug: Check if Service Account is loaded (do not log the actual key)
-if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
-  console.error("CRITICAL: FIREBASE_SERVICE_ACCOUNT environment variable is missing!");
+if (!process.env.FIREBASE_SERVICE_ACCOUNT && 
+    (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY)) {
+  console.error("CRITICAL: Firebase credentials missing from environment variables!");
 }
 
 app.use(express.json({ limit: "10mb" }));
