@@ -6,7 +6,6 @@ import {
   auth,
   googleProvider,
   githubProvider,
-  facebookProvider,
   twitterProvider,
 } from "../../api/firebase";
 import { signInWithRedirect, createUserWithEmailAndPassword, signInWithPopup, getRedirectResult } from "firebase/auth";
@@ -15,6 +14,7 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const { firebaseUser, loading } = useAuthContext();
   const redirectFlag = "ttm_oauth_redirect";
+  const successFlag = "ttm_oauth_success";
   const [form, setForm] = useState({ email: "", password: "", confirm: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -29,7 +29,6 @@ export default function RegisterPage() {
   const socialIcons = {
     google: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg",
     github: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg",
-    facebook: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/facebook/facebook-original.svg",
     twitter: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/twitter/twitter-original.svg",
   };
 
@@ -45,8 +44,9 @@ export default function RegisterPage() {
     if (loading) return;
 
     if (firebaseUser) {
-      if (sessionStorage.getItem(redirectFlag)) {
+      if (sessionStorage.getItem(redirectFlag) || sessionStorage.getItem(successFlag)) {
         sessionStorage.removeItem(redirectFlag);
+        sessionStorage.removeItem(successFlag);
         navigate("/oauth/success");
         return;
       }
@@ -67,9 +67,11 @@ export default function RegisterPage() {
     }
     try {
       setIsSubmitting(true);
+      sessionStorage.setItem(successFlag, "1");
       await createUserWithEmailAndPassword(auth, form.email, form.password);
       navigate("/oauth/success");
     } catch (err) {
+      sessionStorage.removeItem(successFlag);
       setError(err.message || "Registration failed");
     } finally {
       setIsSubmitting(false);
@@ -80,6 +82,7 @@ export default function RegisterPage() {
     setError("");
     try {
       setIsSubmitting(true);
+      sessionStorage.setItem(successFlag, "1");
       // Prefer popup on iOS Safari (redirect can stall); otherwise use redirect on mobile.
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       if (prefersPopup) {
@@ -102,13 +105,14 @@ export default function RegisterPage() {
           await signInWithRedirect(auth, provider);
           return;
         } catch (redirectErr) {
-          pendingOAuthRef.current = false;
           sessionStorage.removeItem(redirectFlag);
+          sessionStorage.removeItem(successFlag);
           setError(redirectErr.message || "Social signup failed");
           return;
         }
       }
       sessionStorage.removeItem(redirectFlag);
+      sessionStorage.removeItem(successFlag);
       setError(err.message || "Social signup failed");
     } finally {
       setIsSubmitting(false);
@@ -142,10 +146,6 @@ export default function RegisterPage() {
           <button type="button" className="btn-ghost social-btn" disabled={isSubmitting} onClick={() => handleSocial(githubProvider)}>
             <span className="social-icon"><img src={socialIcons.github} alt="GitHub" /></span>
             <span>Continue with GitHub</span>
-          </button>
-          <button type="button" className="btn-ghost social-btn" disabled={isSubmitting} onClick={() => handleSocial(facebookProvider)}>
-            <span className="social-icon"><img src={socialIcons.facebook} alt="Facebook" /></span>
-            <span>Continue with Facebook</span>
           </button>
           <button type="button" className="btn-ghost social-btn" disabled={isSubmitting} onClick={() => handleSocial(twitterProvider)}>
             <span className="social-icon"><img src={socialIcons.twitter} alt="Twitter" /></span>
