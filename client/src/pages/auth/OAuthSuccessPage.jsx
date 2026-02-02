@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../context/AuthContext.jsx";
 import Antigravity from "../../components/Antigravity.jsx";
+import SmoothScroll from "../../components/SmoothScroll.jsx";
 
 export default function OAuthSuccessPage() {
   const navigate = useNavigate();
@@ -53,6 +54,7 @@ export default function OAuthSuccessPage() {
 
   return (
     <div className="antigravity-bg">
+      <SmoothScroll />
       {showCanvas && !prefersReducedMotion && (
         <div className="antigravity-canvas">
           <Antigravity
