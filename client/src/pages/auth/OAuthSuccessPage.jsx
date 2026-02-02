@@ -7,6 +7,7 @@ import SmoothScroll from "../../components/SmoothScroll.jsx";
 export default function OAuthSuccessPage() {
   const navigate = useNavigate();
   const { firebaseUser, loading, bootstrapped } = useAuthContext();
+  const successFlag = "ttm_oauth_success";
   const [readyToRedirect, setReadyToRedirect] = useState(false);
   const [showCanvas, setShowCanvas] = useState(true);
   const [pointer, setPointer] = useState({ x: 0.5, y: 0.5 });
@@ -39,6 +40,10 @@ export default function OAuthSuccessPage() {
       document.removeEventListener("visibilitychange", visibilityHandler);
       clearInterval(blinkTimer);
     };
+  }, []);
+
+  useEffect(() => {
+    sessionStorage.removeItem(successFlag);
   }, []);
 
   useEffect(() => {
