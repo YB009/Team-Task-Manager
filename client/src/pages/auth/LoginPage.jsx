@@ -155,7 +155,7 @@ export default function LoginPage() {
           </button>
         </div>
         <div className="auth-footnote" style={{ position: "relative", zIndex: 10 }}>
-          Don't have an account? <Link to="/signup">Sign up</Link>
+          Don't have an account? <Link to="/register">Sign up</Link>
         </div>
       </form>
     </AuthLayout>
