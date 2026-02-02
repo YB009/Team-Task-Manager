@@ -3,7 +3,7 @@ export default function Drawer({ open, onClose, children }) {
 
   return (
     <div className="drawer-backdrop" onClick={onClose}>
-      <div className="drawer-panel" onClick={(e) => e.stopPropagation()}>
+      <div className="drawer-panel" data-lenis-prevent onClick={(e) => e.stopPropagation()}>
         {children}
       </div>
     </div>

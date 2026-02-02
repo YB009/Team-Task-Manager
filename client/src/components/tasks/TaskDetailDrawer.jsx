@@ -218,7 +218,7 @@ export default function TaskDetailDrawer({
   );
 
   return (
-    <div className="drawer drawer--panel task-drawer">
+    <div className="drawer drawer--panel task-drawer" data-lenis-prevent>
       <div className="drawer__header task-drawer-header" style={{ justifyContent: "space-between", gap: 12 }}>
         <div className="task-drawer-header__left">
           {showBack && (

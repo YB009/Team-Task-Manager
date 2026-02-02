@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import AuthLayout from "../../components/Layout/AuthLayout.jsx";
 import { useAuthContext } from "../../context/AuthContext.jsx";
@@ -13,8 +13,7 @@ import { signInWithRedirect, createUserWithEmailAndPassword, signInWithPopup, ge
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { firebaseUser, token, loading } = useAuthContext();
-  const pendingOAuthRef = useRef(false);
+  const { firebaseUser, loading } = useAuthContext();
   const redirectFlag = "ttm_oauth_redirect";
   const [form, setForm] = useState({ email: "", password: "", confirm: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,11 +41,11 @@ export default function RegisterPage() {
       if (sessionStorage.getItem(redirectFlag)) {
         sessionStorage.removeItem(redirectFlag);
         navigate("/oauth/success");
-      } else if (token && !pendingOAuthRef.current) {
-        navigate("/dashboard");
+        return;
       }
+      navigate("/dashboard");
     }
-  }, [firebaseUser, token, loading, navigate]);
+  }, [firebaseUser, loading, navigate]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -61,11 +60,9 @@ export default function RegisterPage() {
     }
     try {
       setIsSubmitting(true);
-      pendingOAuthRef.current = true;
       await createUserWithEmailAndPassword(auth, form.email, form.password);
       navigate("/oauth/success");
     } catch (err) {
-      pendingOAuthRef.current = false;
       setError(err.message || "Registration failed");
     } finally {
       setIsSubmitting(false);
@@ -76,8 +73,6 @@ export default function RegisterPage() {
     setError("");
     try {
       setIsSubmitting(true);
-      pendingOAuthRef.current = true;
-
       // Detect mobile to prefer redirect (fixes Safari popup issues)
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       if (isMobile) {
@@ -102,7 +97,6 @@ export default function RegisterPage() {
           return;
         }
       }
-      pendingOAuthRef.current = false;
       sessionStorage.removeItem(redirectFlag);
       setError(err.message || "Social signup failed");
     } finally {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { signInWithRedirect, signInWithEmailAndPassword, signInWithPopup, getRedirectResult } from "firebase/auth";
 import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "../../components/Layout/AuthLayout.jsx";
@@ -20,8 +20,7 @@ const socialIcons = {
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { firebaseUser, token, loading } = useAuthContext();
-  const pendingOAuthRef = useRef(false);
+  const { firebaseUser, loading } = useAuthContext();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,21 +43,19 @@ export default function LoginPage() {
       navigate("/oauth/success", { replace: true });
       return;
     }
-    if (firebaseUser && token && !pendingOAuthRef.current) {
+    if (firebaseUser) {
       navigate("/dashboard", { replace: true });
     }
-  }, [firebaseUser, token, loading, navigate]);
+  }, [firebaseUser, loading, navigate]);
 
   const handleEmailLogin = async (e) => {
     e.preventDefault();
     setError("");
     try {
       setIsSubmitting(true);
-      pendingOAuthRef.current = true;
       await signInWithEmailAndPassword(auth, email, password);
       navigate("/oauth/success");
     } catch (err) {
-      pendingOAuthRef.current = false;
       setError(err.message || "Login failed");
     } finally {
       setIsSubmitting(false);
@@ -69,8 +66,6 @@ export default function LoginPage() {
     setError("");
     try {
       setIsSubmitting(true);
-      pendingOAuthRef.current = true;
-
       // Detect mobile to prefer redirect (fixes Safari popup issues)
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       if (isMobile) {
@@ -95,7 +90,6 @@ export default function LoginPage() {
           return;
         }
       }
-      pendingOAuthRef.current = false;
       sessionStorage.removeItem(redirectFlag);
       setError(err.message || "Social login failed");
     } finally {
