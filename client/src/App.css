@@ -252,7 +252,7 @@
   backdrop-filter: blur(10px);
   box-shadow: -18px 0 40px rgba(15, 23, 42, 0.18);
   padding: 18px 16px;
-  overflow-y: scroll;
+  overflow-y: auto;
 }
 
 .task-drawer {
@@ -303,6 +303,7 @@
 
 .drawer__body {
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .stack {
@@ -326,6 +327,8 @@
   display: grid;
   gap: 16px;
   padding: 6px 2px 24px;
+  overflow-y: auto;
+  height: 100%;
 }
 
 .task-panel__section {
@@ -1143,4 +1146,10 @@
 
 .form-field textarea {
   resize: vertical;
+}
+
+
+.drawer.drawer--panel.task-drawer {
+  z-index: 9999 !important;
+  overflow-y: auto !important;
 }

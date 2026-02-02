@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuthContext } from "../../context/AuthContext.jsx";
+import { useLenis } from "../../context/LenisContext";
 import { logActivity } from "../../api/activityApi.js";
 import axios from "../../api/axiosInstance";
 import DueDateEditor from "./DueDateEditor.jsx";
@@ -62,6 +63,7 @@ export default function TaskDetailDrawer({
   members = []
 }) {
   const { firebaseUser, activeOrganization } = useAuthContext();
+  const lenis = useLenis();
   const [meta, setMeta] = useState({ objectives: [], comments: [] });
   const [attachments, setAttachments] = useState([]);
   const [descriptionText, setDescriptionText] = useState("");
@@ -70,12 +72,30 @@ export default function TaskDetailDrawer({
   const [editingObjectiveText, setEditingObjectiveText] = useState("");
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingCommentText, setEditingCommentText] = useState("");
+  
   const initialsFrom = (value = "") => {
     const parts = String(value).trim().split(/\s+/).filter(Boolean);
     if (!parts.length) return "?";
     if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
     return (parts[0][0] + parts[1][0]).toUpperCase();
   };
+
+  // Stop Lenis smooth scroll when drawer is open
+  useEffect(() => {
+    if (lenis && task) {
+      lenis.stop();
+      // Disable scroll on body to prevent background scrolling
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      if (lenis) {
+        lenis.start();
+        // Re-enable scroll on body
+        document.body.style.overflow = '';
+      }
+    };
+  }, [lenis, task]);
 
   useEffect(() => {
     const all = loadMeta();
@@ -640,7 +660,7 @@ const AttachmentGrid = ({ attachments, onRemove }) => {
               style={{ position: "absolute", top: 6, right: 6 }}
               onClick={() => onRemove(a.id)}
             >
-              A-
+              ✕
             </button>
             <a
               href={a.dataUrl}

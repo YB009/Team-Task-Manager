@@ -1,8 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import Lenis from "lenis";
 import "lenis/dist/lenis.css";
+import { LenisProvider } from "../context/LenisContext";
 
-export default function SmoothScroll() {
+export default function SmoothScroll({ children }) {
+  const lenisRef = useRef(null);
+  const [lenisInstance, setLenisInstance] = useState(null);
+
   useEffect(() => {
     const lenis = new Lenis({
       duration: 1.2,
@@ -14,6 +18,9 @@ export default function SmoothScroll() {
       smoothTouch: false,
       touchMultiplier: 2,
     });
+
+    lenisRef.current = lenis;
+    setLenisInstance(lenis);
 
     let animationFrameId;
 
@@ -30,5 +37,9 @@ export default function SmoothScroll() {
     };
   }, []);
 
-  return null;
+  return (
+    <LenisProvider lenis={lenisInstance}>
+      {children}
+    </LenisProvider>
+  );
 }
