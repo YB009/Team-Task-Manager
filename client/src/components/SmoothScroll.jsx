@@ -15,14 +15,19 @@ export default function SmoothScroll() {
       touchMultiplier: 2,
     });
 
+    let animationFrameId;
+
     function raf(time) {
       lenis.raf(time);
-      requestAnimationFrame(raf);
+      animationFrameId = requestAnimationFrame(raf);
     }
 
-    requestAnimationFrame(raf);
+    animationFrameId = requestAnimationFrame(raf);
 
-    return () => lenis.destroy();
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      lenis.destroy();
+    };
   }, []);
 
   return null;
