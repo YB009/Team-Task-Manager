@@ -233,7 +233,7 @@
   display: grid;
   grid-template-rows: auto 1fr;
   gap: 12px;
-  z-index: 30;
+  z-index: 120;
 }
 
 .drawer-backdrop {
@@ -242,7 +242,7 @@
   background: rgba(15, 23, 42, 0.25);
   display: flex;
   justify-content: flex-end;
-  z-index: 40;
+  z-index: 110;
 }
 
 .drawer-panel {
@@ -256,6 +256,7 @@
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
+  z-index: 120;
 }
 
 .task-drawer {
@@ -1160,6 +1161,13 @@
 .drawer.drawer--panel.task-drawer {
   z-index: 9999 !important;
   overflow-y: auto !important;
+}
+
+@supports (height: 100dvh) {
+  .drawer,
+  .drawer-panel {
+    height: 100dvh;
+  }
 }
 
 body.drawer-open {
