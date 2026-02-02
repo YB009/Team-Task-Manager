@@ -26,6 +26,13 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const redirectFlag = "ttm_oauth_redirect";
+  const prefersPopup = (() => {
+    if (typeof navigator === "undefined") return false;
+    const ua = navigator.userAgent || "";
+    const isIOS = /iPad|iPhone|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const isSafari = /Safari/i.test(ua) && !/Chrome|CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua);
+    return isIOS && isSafari;
+  })();
 
   useEffect(() => {
     getRedirectResult(auth).catch((err) => {
@@ -66,19 +73,23 @@ export default function LoginPage() {
     setError("");
     try {
       setIsSubmitting(true);
-      // Detect mobile to prefer redirect (fixes Safari popup issues)
+      // Prefer popup on iOS Safari (redirect can stall); otherwise use redirect on mobile.
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (prefersPopup) {
+        await signInWithPopup(auth, provider);
+        navigate("/oauth/success");
+        return;
+      }
       if (isMobile) {
         sessionStorage.setItem(redirectFlag, "1");
         await signInWithRedirect(auth, provider);
         return;
       }
 
-      // Use popup for all environments to avoid browser redirect/state-loss issues
       await signInWithPopup(auth, provider);
       navigate("/oauth/success");
     } catch (err) {
-      if (err?.code === "auth/popup-blocked" || err?.code === "auth/popup-closed-by-user") {
+      if (err?.code === "auth/popup-blocked" || err?.code === "auth/popup-closed-by-user" || err?.code === "auth/operation-not-supported-in-this-environment") {
         try {
           sessionStorage.setItem(redirectFlag, "1");
           await signInWithRedirect(auth, provider);

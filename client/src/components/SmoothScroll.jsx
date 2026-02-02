@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useMemo } from "react";
 import Lenis from "lenis";
 import "lenis/dist/lenis.css";
 import { LenisProvider } from "../context/LenisContext";
@@ -6,6 +6,13 @@ import { LenisProvider } from "../context/LenisContext";
 export default function SmoothScroll({ children }) {
   const lenisRef = useRef(null);
   const frameIdRef = useRef(null);
+  const isIOSSafari = useMemo(() => {
+    if (typeof navigator === "undefined") return false;
+    const ua = navigator.userAgent || "";
+    const isIOS = /iPad|iPhone|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const isSafari = /Safari/i.test(ua) && !/Chrome|CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua);
+    return isIOS && isSafari;
+  }, []);
 
   const initLenis = useCallback(() => {
     if (lenisRef.current) return lenisRef.current;
@@ -26,6 +33,7 @@ export default function SmoothScroll({ children }) {
   }, []);
 
   useEffect(() => {
+    if (isIOSSafari) return;
     const lenis = initLenis();
 
     function raf(time) {
@@ -44,15 +52,15 @@ export default function SmoothScroll({ children }) {
         lenisRef.current = null;
       }
     };
-  }, [initLenis]);
+  }, [initLenis, isIOSSafari]);
 
   // Initialize lenis instance eagerly for context
-  if (!lenisRef.current) {
+  if (!lenisRef.current && !isIOSSafari) {
     initLenis();
   }
 
   return (
-    <LenisProvider lenis={lenisRef.current}>
+    <LenisProvider lenis={isIOSSafari ? null : lenisRef.current}>
       {children}
     </LenisProvider>
   );
