@@ -12,6 +12,10 @@ export default function OAuthSuccessPage() {
   const [showCanvas, setShowCanvas] = useState(true);
   const [pointer, setPointer] = useState({ x: 0.5, y: 0.5 });
   const [blink, setBlink] = useState(false);
+  const shouldDisableMouse = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+  }, []);
   const prefersReducedMotion = useMemo(() => {
     if (typeof window === "undefined") return false;
     return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -23,7 +27,9 @@ export default function OAuthSuccessPage() {
       const y = e.clientY / window.innerHeight;
       setPointer({ x, y });
     };
-    window.addEventListener("mousemove", track);
+    if (!shouldDisableMouse) {
+      window.addEventListener("mousemove", track);
+    }
 
     const blinkTimer = setInterval(() => {
       setBlink(true);
@@ -36,11 +42,13 @@ export default function OAuthSuccessPage() {
     document.addEventListener("visibilitychange", visibilityHandler);
 
     return () => {
-      window.removeEventListener("mousemove", track);
+      if (!shouldDisableMouse) {
+        window.removeEventListener("mousemove", track);
+      }
       document.removeEventListener("visibilitychange", visibilityHandler);
       clearInterval(blinkTimer);
     };
-  }, []);
+  }, [shouldDisableMouse]);
 
   useEffect(() => {
     sessionStorage.removeItem(successFlag);
@@ -78,15 +86,18 @@ export default function OAuthSuccessPage() {
             pulseSpeed={3}
             particleShape="box"
             fieldStrength={10}
+            followPointer={!shouldDisableMouse}
           />
         </div>
       )}
       <div className="oauth-hero" onClick={handleContinue} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && handleContinue()}>
-        <Eyes pointer={pointer} blink={blink} />
+        <Eyes pointer={shouldDisableMouse ? { x: 0.5, y: 0.5 } : pointer} blink={blink} />
         <h1
           className="hero-title"
           style={{
-            transform: `translate3d(${(pointer.x - 0.5) * 20}px, ${(pointer.y - 0.5) * 12}px, 0)`,
+            transform: shouldDisableMouse
+              ? "translate3d(0, 0, 0)"
+              : `translate3d(${(pointer.x - 0.5) * 20}px, ${(pointer.y - 0.5) * 12}px, 0)`,
           }}
         >
           Welcome to WorkVite

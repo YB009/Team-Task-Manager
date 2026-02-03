@@ -19,6 +19,7 @@ const AntigravityInner = ({
   pulseSpeed = 3,
   particleShape = "box",
   fieldStrength = 10,
+  followPointer = true,
 }) => {
   const meshRef = useRef(null);
   const { viewport } = useThree();
@@ -74,15 +75,16 @@ const AntigravityInner = ({
     if (!mesh) return;
 
     const { viewport: v, pointer: m } = state;
+    const pointer = followPointer ? m : { x: 0, y: 0 };
 
-    const mouseDist = Math.hypot(m.x - lastMousePos.current.x, m.y - lastMousePos.current.y);
+    const mouseDist = Math.hypot(pointer.x - lastMousePos.current.x, pointer.y - lastMousePos.current.y);
     if (mouseDist > 0.001) {
       lastMouseMoveTime.current = Date.now();
-      lastMousePos.current = { x: m.x, y: m.y };
+      lastMousePos.current = { x: pointer.x, y: pointer.y };
     }
 
-    let destX = (m.x * v.width) / 2;
-    let destY = (m.y * v.height) / 2;
+    let destX = (pointer.x * v.width) / 2;
+    let destY = (pointer.y * v.height) / 2;
 
     if (autoAnimate && Date.now() - lastMouseMoveTime.current > 2000) {
       const time = state.clock.getElapsedTime();
@@ -157,15 +159,15 @@ const AntigravityInner = ({
   );
 };
 
-const Antigravity = (props) => {
+const Antigravity = ({ followPointer = true, ...props }) => {
   return (
     <Canvas
       camera={{ position: [0, 0, 50], fov: 35 }}
       // Listen to global pointer moves so the field follows the cursor even when over UI
-      eventSource={document.body}
-      eventPrefix="client"
+      eventSource={followPointer ? document.body : undefined}
+      eventPrefix={followPointer ? "client" : undefined}
     >
-      <AntigravityInner {...props} />
+      <AntigravityInner followPointer={followPointer} {...props} />
     </Canvas>
   );
 };

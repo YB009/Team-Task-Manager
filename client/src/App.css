@@ -1013,6 +1013,20 @@
   overflow: hidden;
 }
 
+@media (max-width: 768px) {
+  .antigravity-bg,
+  .oauth-hero {
+    height: 100dvh;
+    min-height: 100dvh;
+  }
+  .oauth-hero {
+    padding: 20px;
+  }
+  .hero-title {
+    font-size: 42px;
+  }
+}
+
 .antigravity-canvas {
   position: fixed;
   inset: 0;
