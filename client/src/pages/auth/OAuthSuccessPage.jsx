@@ -101,7 +101,7 @@ export default function OAuthSuccessPage() {
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     idleTimerRef.current = setTimeout(() => {
       handleContinue();
-    }, 10000);
+    }, 5000);
     return () => {
       if (idleTimerRef.current) {
         clearTimeout(idleTimerRef.current);
