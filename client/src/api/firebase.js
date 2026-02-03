@@ -6,6 +6,8 @@ import {
   FacebookAuthProvider,
   GithubAuthProvider,
   TwitterAuthProvider,
+  setPersistence,
+  browserLocalPersistence,
 } from "firebase/auth";
 
 /**
@@ -32,6 +34,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
+
+// Ensure auth state persists across iOS redirects (Chrome/Safari use WKWebView).
+setPersistence(auth, browserLocalPersistence).catch((err) => {
+  console.warn("Auth persistence setup failed:", err);
+});
 
 // Providers
 export const googleProvider = new GoogleAuthProvider();

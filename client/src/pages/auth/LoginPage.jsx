@@ -25,18 +25,12 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const redirectFlag = "ttm_oauth_redirect";
   const successFlag = "ttm_oauth_success";
-  const isInAppBrowser = (() => {
+  const isMobile = (() => {
     if (typeof navigator === "undefined") return false;
     const ua = navigator.userAgent || "";
-    return /Snapchat|FBAN|FBAV|Instagram|Line|Twitter|LinkedIn|Pinterest|Telegram|WhatsApp|Messenger/i.test(ua);
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
   })();
-  const prefersPopup = (() => {
-    if (typeof navigator === "undefined") return false;
-    const ua = navigator.userAgent || "";
-    const isIOS = /iPad|iPhone|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    const isSafari = /Safari/i.test(ua) && !/Chrome|CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua);
-    return isIOS && isSafari;
-  })();
+  const isDesktop = !isMobile;
 
   useEffect(() => {
     getRedirectResult(auth).catch((err) => {
@@ -85,45 +79,34 @@ export default function LoginPage() {
       setIsSubmitting(true);
       sessionStorage.setItem(successFlag, "1");
       localStorage.setItem(successFlag, "1");
-      // Prefer popup on iOS Safari (redirect can stall); otherwise use redirect on mobile.
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      if (prefersPopup) {
+
+      if (isDesktop) {
         await signInWithPopup(auth, provider);
         navigate("/oauth/success");
         return;
       }
-      if (isMobile) {
-        sessionStorage.setItem(redirectFlag, "1");
-        await signInWithRedirect(auth, provider);
-        return;
-      }
-
-      await signInWithPopup(auth, provider);
-      navigate("/oauth/success");
+      
+      // Mobile: use redirect
+      sessionStorage.setItem(redirectFlag, "1");
+      await signInWithRedirect(auth, provider);
     } catch (err) {
-      if (err?.code === "auth/popup-blocked" || err?.code === "auth/popup-closed-by-user" || err?.code === "auth/operation-not-supported-in-this-environment") {
-        if (prefersPopup) {
-          sessionStorage.removeItem(successFlag);
-          localStorage.removeItem(successFlag);
-          setError("Please allow pop-ups in Safari to continue with social sign-in.");
-          return;
-        }
+      if (err?.code === "auth/popup-blocked" || err?.code === "auth/popup-closed-by-user") {
+        // This fallback is for desktop browsers where popups might be blocked.
         try {
           sessionStorage.setItem(redirectFlag, "1");
           await signInWithRedirect(auth, provider);
           return;
         } catch (redirectErr) {
-          sessionStorage.removeItem(redirectFlag);
-          sessionStorage.removeItem(successFlag);
-          localStorage.removeItem(successFlag);
-          setError(redirectErr.message || "Social login failed");
-          return;
+          setError(redirectErr.message || "Social login failed after popup was blocked.");
         }
+      } else {
+        setError(err.message || "Social login failed");
       }
+      
+      // Clear flags on error
       sessionStorage.removeItem(redirectFlag);
       sessionStorage.removeItem(successFlag);
       localStorage.removeItem(successFlag);
-      setError(err.message || "Social login failed");
     } finally {
       setIsSubmitting(false);
     }
