@@ -118,7 +118,7 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthLayout title="Welcome back">
+    <AuthLayout title="Welcome to Workvite">
       <form className="auth-actions" onSubmit={handleEmailLogin}>
         {error && <div className="error-text">{error}</div>}
         {isInAppBrowser && (

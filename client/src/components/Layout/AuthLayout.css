@@ -1,9 +1,11 @@
 .auth-shell {
   min-height: 100vh;
-  background: #f7fafc;
+  background: #ffffff;
   display: grid;
   place-items: center;
   padding: 24px;
+  position: relative;
+  overflow: hidden;
 }
 
 .auth-card {
@@ -14,6 +16,8 @@
   padding: 24px;
   box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
   border: 1px solid #eef1f7;
+  position: relative;
+  z-index: 2;
 }
 
 .auth-card__header h1 {

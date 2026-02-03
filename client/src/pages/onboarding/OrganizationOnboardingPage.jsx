@@ -5,6 +5,7 @@ import { Building2, Mail, Sparkles } from "lucide-react";
 import axios from "../../api/axiosInstance";
 import { acceptTeamInvite } from "../../api/teamApi";
 import { useAuthContext } from "../../context/AuthContext.jsx";
+import Particles from "../../components/background/Particles.jsx";
 
 const INVITE_STORAGE_KEY = "ttm_invite_token";
 
@@ -77,6 +78,17 @@ export default function OrganizationOnboardingPage() {
 
   return (
     <div className="org-onboarding">
+      <Particles
+        particleColors={["#111111"]}
+        particleCount={200}
+        particleSpread={10}
+        speed={0.1}
+        particleBaseSize={90}
+        moveParticlesOnHover={true}
+        alphaParticles={false}
+        disableRotation={false}
+        pixelRatio={1}
+      />
       <div className="org-onboarding__card">
         <div className="org-onboarding__header">
           <div className="org-onboarding__badge">

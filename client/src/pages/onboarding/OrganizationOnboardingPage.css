@@ -3,8 +3,10 @@
   display: grid;
   place-items: center;
   padding: 48px 20px;
-  background: radial-gradient(circle at top, #f6f7ff 0%, #f3f5fb 55%, #eef1f7 100%);
+  background: #ffffff;
   color: #0f172a;
+  position: relative;
+  overflow: hidden;
 }
 
 .org-onboarding__card {
@@ -14,6 +16,8 @@
   padding: 32px;
   box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
   border: 1px solid rgba(148, 163, 184, 0.2);
+  position: relative;
+  z-index: 2;
 }
 
 .org-onboarding__header {
