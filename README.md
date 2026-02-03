@@ -17,8 +17,10 @@
   <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/postgres-14-blue" alt="Postgres" /></a>
 </p>
 
+🌐 Live Application: https://team-task-manager-p15t.onrender.com
+
 ## Tech stack
-- Frontend: React 19, Vite, Tailwind CSS, Axios  
+- Frontend: React, Vite, Tailwind CSS, ThreeJS
 - Auth: Firebase Auth (email/password + Google, Facebook, GitHub, Twitter/X)  
 - Backend: Node/Express, Prisma ORM, PostgreSQL, Firebase Admin for token verification  
 - Dev tooling: Nodemon, ESLint (via Vite default), npm workspaces  
