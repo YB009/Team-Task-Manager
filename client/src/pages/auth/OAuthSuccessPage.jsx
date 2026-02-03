@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../context/AuthContext.jsx";
+import { auth } from "../../api/firebase";
+import { getRedirectResult } from "firebase/auth";
 import Antigravity from "../../components/Antigravity.jsx";
 import SmoothScroll from "../../components/SmoothScroll.jsx";
 
@@ -9,6 +11,8 @@ export default function OAuthSuccessPage() {
   const { firebaseUser, loading, bootstrapped } = useAuthContext();
   const successFlag = "ttm_oauth_success";
   const [readyToRedirect, setReadyToRedirect] = useState(false);
+  const [error, setError] = useState("");
+  const idleTimerRef = useRef(null);
   const [showCanvas, setShowCanvas] = useState(true);
   const [pointer, setPointer] = useState({ x: 0.5, y: 0.5 });
   const [blink, setBlink] = useState(false);
@@ -52,7 +56,29 @@ export default function OAuthSuccessPage() {
 
   useEffect(() => {
     sessionStorage.removeItem(successFlag);
+    localStorage.removeItem(successFlag);
   }, []);
+
+  useEffect(() => {
+    let timeoutId;
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          setReadyToRedirect(true);
+        }
+      })
+      .catch(() => {
+        // ignore; fallback handled by auth state + timeout
+      });
+
+    timeoutId = setTimeout(() => {
+      if (!firebaseUser) {
+        setError("Auth session not ready. Please sign in again.");
+      }
+    }, 6000);
+
+    return () => clearTimeout(timeoutId);
+  }, [firebaseUser]);
 
   useEffect(() => {
     document.body.classList.add("oauth-success");
@@ -69,6 +95,19 @@ export default function OAuthSuccessPage() {
     if (!readyToRedirect) return;
     navigate("/dashboard", { replace: true });
   };
+
+  useEffect(() => {
+    if (!readyToRedirect) return;
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = setTimeout(() => {
+      handleContinue();
+    }, 10000);
+    return () => {
+      if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current);
+      }
+    };
+  }, [readyToRedirect]);
 
   return (
     <div className="antigravity-bg">
@@ -108,6 +147,11 @@ export default function OAuthSuccessPage() {
           Welcome to WorkVite
         </h1>
         <p className="muted hero-sub">Tap, click, or press Enter to continue</p>
+        {error && (
+          <div className="error-text" style={{ marginTop: 12 }}>
+            {error}
+          </div>
+        )}
       </div>
     </div>
   );

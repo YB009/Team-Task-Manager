@@ -49,9 +49,10 @@ export default function RegisterPage() {
     if (loading) return;
 
     if (firebaseUser) {
-      if (sessionStorage.getItem(redirectFlag) || sessionStorage.getItem(successFlag)) {
+      if (sessionStorage.getItem(redirectFlag) || sessionStorage.getItem(successFlag) || localStorage.getItem(successFlag)) {
         sessionStorage.removeItem(redirectFlag);
         sessionStorage.removeItem(successFlag);
+        localStorage.removeItem(successFlag);
         navigate("/oauth/success");
         return;
       }
@@ -73,10 +74,12 @@ export default function RegisterPage() {
     try {
       setIsSubmitting(true);
       sessionStorage.setItem(successFlag, "1");
+      localStorage.setItem(successFlag, "1");
       await createUserWithEmailAndPassword(auth, form.email, form.password);
       navigate("/oauth/success");
     } catch (err) {
       sessionStorage.removeItem(successFlag);
+      localStorage.removeItem(successFlag);
       setError(err.message || "Registration failed");
     } finally {
       setIsSubmitting(false);
@@ -88,6 +91,7 @@ export default function RegisterPage() {
     try {
       setIsSubmitting(true);
       sessionStorage.setItem(successFlag, "1");
+      localStorage.setItem(successFlag, "1");
       // Prefer popup on iOS Safari (redirect can stall); otherwise use redirect on mobile.
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       if (prefersPopup) {
@@ -105,6 +109,12 @@ export default function RegisterPage() {
       navigate("/oauth/success");
     } catch (err) {
       if (err?.code === "auth/popup-blocked" || err?.code === "auth/popup-closed-by-user" || err?.code === "auth/operation-not-supported-in-this-environment") {
+        if (prefersPopup) {
+          sessionStorage.removeItem(successFlag);
+          localStorage.removeItem(successFlag);
+          setError("Please allow pop-ups in Safari to continue with social sign-up.");
+          return;
+        }
         try {
           sessionStorage.setItem(redirectFlag, "1");
           await signInWithRedirect(auth, provider);
@@ -112,12 +122,14 @@ export default function RegisterPage() {
         } catch (redirectErr) {
           sessionStorage.removeItem(redirectFlag);
           sessionStorage.removeItem(successFlag);
+          localStorage.removeItem(successFlag);
           setError(redirectErr.message || "Social signup failed");
           return;
         }
       }
       sessionStorage.removeItem(redirectFlag);
       sessionStorage.removeItem(successFlag);
+      localStorage.removeItem(successFlag);
       setError(err.message || "Social signup failed");
     } finally {
       setIsSubmitting(false);
