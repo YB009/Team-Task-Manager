@@ -1013,6 +1013,12 @@
   overflow: hidden;
 }
 
+body.oauth-success {
+  overflow: hidden;
+  height: 100dvh;
+  touch-action: manipulation;
+}
+
 @media (max-width: 768px) {
   .antigravity-bg,
   .oauth-hero {

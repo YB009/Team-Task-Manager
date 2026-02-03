@@ -55,6 +55,11 @@ export default function OAuthSuccessPage() {
   }, []);
 
   useEffect(() => {
+    document.body.classList.add("oauth-success");
+    return () => document.body.classList.remove("oauth-success");
+  }, []);
+
+  useEffect(() => {
     if (loading || !bootstrapped) return;
     setReadyToRedirect(Boolean(firebaseUser));
   }, [firebaseUser, loading, bootstrapped]);
