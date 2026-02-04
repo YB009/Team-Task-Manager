@@ -90,6 +90,13 @@ export default function OAuthSuccessPage() {
     setReadyToRedirect(Boolean(firebaseUser));
   }, [firebaseUser, loading, bootstrapped]);
 
+  useEffect(() => {
+    if (loading || !bootstrapped) return;
+    if (!firebaseUser) {
+      navigate("/login", { replace: true });
+    }
+  }, [firebaseUser, loading, bootstrapped, navigate]);
+
   const handleContinue = () => {
     if (document.hidden) return;
     if (!readyToRedirect) return;
