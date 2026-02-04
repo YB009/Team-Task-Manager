@@ -74,12 +74,7 @@ export const AuthProvider = ({ children }) => {
 
   // Watch Firebase auth state
   useEffect(() => {
-    // Always resolve any pending redirect result so auth state updates on any route.
-    getRedirectResult(auth).catch(() => {
-      // ignore; auth state listener will handle steady-state
-    });
-
-    const unsub = onAuthStateChanged(auth, async (user) => {
+    const syncUser = async (user) => {
       setBootstrapped(false);
       if (!user) {
         setFirebaseUser(null);
@@ -120,6 +115,21 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
         setBootstrapped(true);
       }
+    };
+
+    // Always resolve any pending redirect result so auth state updates on any route.
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          syncUser(result.user);
+        }
+      })
+      .catch(() => {
+        // ignore; auth state listener will handle steady-state
+      });
+
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      await syncUser(user);
     });
 
     return () => unsub();

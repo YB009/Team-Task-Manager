@@ -51,8 +51,8 @@ const isSafari = (() => {
   return /Safari/i.test(ua) && !/Chrome|CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua);
 })();
 
-// Safari on iOS is more reliable with localStorage; Chrome iOS usually handles IndexedDB.
-const preferredPersistence = isIOS && isSafari ? browserLocalPersistence : indexedDBLocalPersistence;
+// iOS browsers can be unreliable with IndexedDB after redirects; prefer localStorage on iOS.
+const preferredPersistence = isIOS ? browserLocalPersistence : indexedDBLocalPersistence;
 
 // Ensure auth state persists across redirects (iOS Safari can fail with IndexedDB).
 setPersistence(auth, preferredPersistence).catch(async (err) => {
