@@ -108,6 +108,10 @@
   gap: 10px;
 }
 
+.social-btn {
+  min-height: 56px;
+}
+
 .social-icon {
   display: inline-flex;
   width: 20px;
@@ -119,6 +123,35 @@
 .social-icon img {
   width: 18px;
   height: 18px;
+}
+
+@media (min-width: 1024px) {
+  .auth-card {
+    max-width: 440px;
+    padding: 20px;
+  }
+
+  .social-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .social-btn {
+    min-height: 46px;
+    padding: 8px 10px;
+    font-size: 14px;
+    gap: 8px;
+  }
+
+  .social-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .social-icon img {
+    width: 15px;
+    height: 15px;
+  }
 }
 
 .error-text {

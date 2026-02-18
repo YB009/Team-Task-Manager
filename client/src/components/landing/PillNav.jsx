@@ -6,6 +6,8 @@ const PillNav = ({
   logo,
   logoAlt = "Logo",
   items,
+  mobileSignInHref,
+  mobileSignInLabel = "Sign In",
   activeHref,
   className = "",
   ease = "power3.easeOut",
@@ -448,6 +450,17 @@ const PillNav = ({
               </li>
             );
           })}
+          {mobileSignInHref && (
+            <li>
+              <Link
+                to={mobileSignInHref}
+                className="block py-3 px-4 text-[14px] font-semibold rounded-[50px] text-center bg-slate-900 text-white transition-all duration-200"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                {mobileSignInLabel}
+              </Link>
+            </li>
+          )}
         </ul>
       </div>
     </div>

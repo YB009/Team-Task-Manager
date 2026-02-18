@@ -28,6 +28,8 @@ function LandingPage() {
           logo={logo}
           logoAlt="Workvite Logo"
           items={navItems}
+          mobileSignInHref="/login"
+          mobileSignInLabel="Sign In"
           activeHref="#hero"
           className="custom-nav"
           ease="power2.easeOut"
@@ -49,11 +51,11 @@ function LandingPage() {
       <ThreeDTextReveal
         items={["WORKVITE","THE", "BEST", "PROJECT", "MANAGER"]}
         perspective={1000}
-        radius={180}
+        radius={220}
         gap={24}
         startRotation={-80}
         endRotation={270}
-        scrollDistance="150vh"
+        scrollDistance="75vh"
         scrollSmoothing={1}
       />
       <ProblemSection />
