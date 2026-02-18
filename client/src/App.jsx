@@ -23,14 +23,28 @@ import TeamPage from "./pages/team/TeamPage.jsx";
 import SettingsPage from "./pages/settings/SettingsPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 import OrganizationOnboardingPage from "./pages/onboarding/OrganizationOnboardingPage.jsx";
+import LandingPage from "./pages/landing/LandingPage.jsx";
 import Drawer from "./components/ui/Drawer.jsx";
 import { useProfile } from "./context/ProfileContext.jsx";
 import AppBackground from "./components/background/AppBackground.jsx";
+import TargetCursor from "./components/TargetCursor.jsx";
 
 function App() {
   const { firebaseUser, loading, hasOrganization, bootstrapped } = useAuthContext();
   const location = useLocation();
   const { profileState, closeProfile } = useProfile();
+
+  const guestRedirectPath = hasOrganization ? "/dashboard" : "/onboarding/organization";
+
+  const GuestLandingRoute = () => {
+    if (loading || !bootstrapped) {
+      return <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", color: "#6b7280" }}>Loading...</div>;
+    }
+    if (firebaseUser) {
+      return <Navigate to={guestRedirectPath} replace />;
+    }
+    return <LandingPage />;
+  };
 
   const ProtectedRoute = () => {
     if (loading || !bootstrapped) {
@@ -68,9 +82,18 @@ function App() {
 
   return (
     <>
+      <TargetCursor
+        targetSelector="a,button,[role='button'],input,textarea,select,.cursor-target"
+        spinDuration={2}
+        hideDefaultCursor
+        parallaxOn
+        hoverDuration={0.2}
+      />
       <AppBackground />
       <div className="app-surface">
       <Routes>
+        <Route path="/" element={<GuestLandingRoute />} />
+        <Route path="/landing" element={<GuestLandingRoute />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/oauth/success" element={<OAuthSuccessPage />} />
@@ -90,7 +113,6 @@ function App() {
           <Route path="/organizations" element={<OrganizationOnboardingPage />} />
 
           <Route path="/" element={<OrgGuard />}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="dashboard-animated" element={<DashboardAnimated />} />
             <Route path="projects" element={<ProjectListPage />} />
