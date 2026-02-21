@@ -87,18 +87,20 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-// Serve static files from the React app
-app.use(express.static(path.join(__dirname, "../../client/dist")));
+const clientDistPath = path.join(__dirname, "../../client/dist");
+const clientIndexPath = path.join(clientDistPath, "index.html");
 
-// The "catchall" handler: for any request that doesn't
-// match one above, send back React's index.html file.
-app.get(/(.*)/, (req, res) => {
-  const indexPath = path.join(__dirname, "../../client/dist/index.html");
-  if (fs.existsSync(indexPath)) {
-    res.sendFile(indexPath);
-  } else {
-    res.status(404).send("Client build not found. Please check your Render Build Command.");
-  }
-});
+// Only serve the frontend bundle when it actually exists (monolithic/local deployments).
+if (fs.existsSync(clientIndexPath)) {
+  app.use(express.static(clientDistPath));
+  app.get(/(.*)/, (req, res) => {
+    res.sendFile(clientIndexPath);
+  });
+} else {
+  // Backend-only deployments (for example Vercel API project).
+  app.get("/", (req, res) => {
+    res.json({ status: "ok", service: "api" });
+  });
+}
 
 export default app;
