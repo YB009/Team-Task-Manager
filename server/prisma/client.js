@@ -14,7 +14,15 @@ dotenv.config({ path: path.join(__dirname, "../.env") });
 const { Pool } = pkg;
 const { PrismaClient } = pkgClient;
 const connectionString = process.env.DATABASE_URL;
-const pool = new Pool({ connectionString });
+const allowInvalidCerts =
+  /sslaccept=accept_invalid_certs/i.test(connectionString || "") ||
+  process.env.PG_SSL_REJECT_UNAUTHORIZED === "false";
+
+const pool = new Pool({
+  connectionString,
+  // Supabase pooler certificates can fail strict validation in some serverless runtimes.
+  ...(allowInvalidCerts ? { ssl: { rejectUnauthorized: false } } : {}),
+});
 const adapter = new PrismaPg(pool);
 
 const prisma = new PrismaClient({ adapter });
