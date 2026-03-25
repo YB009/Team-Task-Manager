@@ -13,7 +13,35 @@ dotenv.config({ path: path.join(__dirname, "../.env") });
 
 const { Pool } = pkg;
 const { PrismaClient } = pkgClient;
-const rawConnectionString = process.env.DATABASE_URL;
+const localPgHost = process.env.PG_HOST;
+const localPgPort = process.env.PG_PORT || "5432";
+const localPgUser = process.env.PG_USER;
+const localPgPassword = process.env.PG_PASSWORD;
+const localPgDatabase = process.env.PG_DATABASE;
+const isLocalPgHost =
+  /^(localhost|127\.0\.0\.1)$/i.test(localPgHost || "");
+const localConnectionString =
+  isLocalPgHost && localPgUser && localPgDatabase
+    ? `postgresql://${encodeURIComponent(localPgUser)}:${encodeURIComponent(localPgPassword || "")}@${localPgHost}:${localPgPort}/${encodeURIComponent(localPgDatabase)}`
+    : null;
+const pooledConnectionString = process.env.DATABASE_URL;
+const directConnectionString = process.env.DIRECT_URL;
+const isSupabasePooler =
+  /pgbouncer=true/i.test(pooledConnectionString || "") ||
+  /:6543(?:\/|$)/i.test(pooledConnectionString || "");
+const shouldPreferLocalConnection =
+  process.env.NODE_ENV !== "production" &&
+  Boolean(localConnectionString);
+const shouldPreferDirectConnection =
+  !shouldPreferLocalConnection &&
+  process.env.NODE_ENV !== "production" &&
+  Boolean(directConnectionString) &&
+  isSupabasePooler;
+const rawConnectionString = shouldPreferDirectConnection
+  ? directConnectionString
+  : shouldPreferLocalConnection
+    ? localConnectionString
+    : pooledConnectionString;
 const allowInvalidCerts =
   /sslaccept=accept_invalid_certs/i.test(rawConnectionString || "") ||
   process.env.PG_SSL_REJECT_UNAUTHORIZED === "false";
@@ -40,9 +68,23 @@ if (allowInvalidCerts && rawConnectionString) {
 
 const pool = new Pool({
   connectionString,
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
   // Supabase pooler certificates can fail strict validation in some serverless runtimes.
   ...(allowInvalidCerts ? { ssl: { rejectUnauthorized: false } } : {}),
 });
+
+pool.on("error", (error) => {
+  console.error("[prisma-pg] pool error:", error?.message || error);
+});
+
+if (shouldPreferLocalConnection) {
+  console.log("[prisma] Using local Postgres for development");
+} else if (shouldPreferDirectConnection) {
+  console.log("[prisma] Using DIRECT_URL for local runtime stability");
+}
+
 const adapter = new PrismaPg(pool);
 
 const prisma = new PrismaClient({ adapter });

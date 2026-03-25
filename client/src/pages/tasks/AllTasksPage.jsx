@@ -212,8 +212,7 @@ export default function AllTasksPage() {
             setError("");
             const headers = { Authorization: `Bearer ${await firebaseUser.getIdToken()}` };
             await axios.delete(`/api/tasks/org/${activeOrganization.id}/${taskToDelete.id}`, { headers });
-            setTasks((prev) => prev.filter((task) => task.id !== taskToDelete.id));
-            setActiveTask(null);
+            window.location.reload();
           } catch (err) {
             console.error(err);
             setError("Failed to delete task.");

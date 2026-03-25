@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../context/AuthContext.jsx";
-import { auth } from "../../api/firebase";
-import { getRedirectResult } from "firebase/auth";
 import Antigravity from "../../components/Antigravity.jsx";
 import SmoothScroll from "../../components/SmoothScroll.jsx";
 
@@ -10,7 +8,6 @@ export default function OAuthSuccessPage() {
   const navigate = useNavigate();
   const { firebaseUser, loading, bootstrapped } = useAuthContext();
   const successFlag = "ttm_oauth_success";
-  const [readyToRedirect, setReadyToRedirect] = useState(false);
   const [error, setError] = useState("");
   const idleTimerRef = useRef(null);
   const [showCanvas, setShowCanvas] = useState(true);
@@ -60,18 +57,7 @@ export default function OAuthSuccessPage() {
   }, []);
 
   useEffect(() => {
-    let timeoutId;
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result?.user) {
-          setReadyToRedirect(true);
-        }
-      })
-      .catch(() => {
-        // ignore; fallback handled by auth state + timeout
-      });
-
-    timeoutId = setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       if (!firebaseUser) {
         setError("Auth session not ready. Please sign in again.");
       }
@@ -87,11 +73,6 @@ export default function OAuthSuccessPage() {
 
   useEffect(() => {
     if (loading || !bootstrapped) return;
-    setReadyToRedirect(Boolean(firebaseUser));
-  }, [firebaseUser, loading, bootstrapped]);
-
-  useEffect(() => {
-    if (loading || !bootstrapped) return;
     if (!firebaseUser) {
       navigate("/login", { replace: true });
     }
@@ -99,12 +80,12 @@ export default function OAuthSuccessPage() {
 
   const handleContinue = useCallback(() => {
     if (document.hidden) return;
-    if (!readyToRedirect) return;
+    if (!firebaseUser) return;
     navigate("/dashboard", { replace: true });
-  }, [navigate, readyToRedirect]);
+  }, [firebaseUser, navigate]);
 
   useEffect(() => {
-    if (!readyToRedirect) return;
+    if (!firebaseUser) return;
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     idleTimerRef.current = setTimeout(() => {
       handleContinue();
@@ -114,7 +95,7 @@ export default function OAuthSuccessPage() {
         clearTimeout(idleTimerRef.current);
       }
     };
-  }, [handleContinue, readyToRedirect]);
+  }, [firebaseUser, handleContinue]);
 
   return (
     <div className="antigravity-bg">

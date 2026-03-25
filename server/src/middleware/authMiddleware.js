@@ -1,5 +1,8 @@
 import admin from "../config/firebaseAdmin.js";
 import prisma from "../../prisma/client.js";
+import { getCache, setCache } from "../utils/cache.js";
+
+const AUTH_CACHE_TTL_MS = 60 * 1000;
 
 export const verifyAuth = async (req, res, next) => {
   try {
@@ -10,6 +13,14 @@ export const verifyAuth = async (req, res, next) => {
     }
 
     const idToken = authHeader.split(" ")[1];
+    const cacheKey = `auth:token:${idToken}`;
+    const cached = await getCache(cacheKey);
+
+    if (cached?.user) {
+      req.user = cached.user;
+      req.firebase = cached.decoded || null;
+      return next();
+    }
 
     // Verify Firebase token
     const decoded = await admin.auth().verifyIdToken(idToken);
@@ -24,6 +35,8 @@ export const verifyAuth = async (req, res, next) => {
     }
 
     req.user = user;
+    req.firebase = decoded;
+    await setCache(cacheKey, { user, decoded }, AUTH_CACHE_TTL_MS);
     next();
 
   } catch (error) {

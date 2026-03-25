@@ -81,7 +81,7 @@ export default function EditProjectPage() {
     try {
       const headers = { Authorization: `Bearer ${await firebaseUser.getIdToken()}` };
       await axios.delete(`/api/projects/org/${activeOrganization.id}/projects/${projectId}`, { headers });
-      navigate("/projects");
+      window.location.assign("/projects");
     } catch (err) {
       console.error(err);
       setError("Failed to delete project.");

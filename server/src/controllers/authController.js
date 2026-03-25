@@ -3,6 +3,9 @@ import admin from "../config/firebaseAdmin.js";
 import prisma from "../../prisma/client.js";
 import { generateToken } from "../utils/generateToken.js";
 import { clearAuthCookies } from "../utils/sessionHelpers.js";
+import { getCache, setCache } from "../utils/cache.js";
+
+const FIREBASE_LOGIN_CACHE_TTL_MS = 60 * 1000;
 
 const extractIdToken = (req) => {
   // Body token
@@ -33,6 +36,12 @@ export const firebaseAuth = async (req, res) => {
 
     if (!idToken) {
       return res.status(400).json({ message: "idToken is required" });
+    }
+
+    const responseCacheKey = `auth:firebase-login:${idToken}`;
+    const cachedResponse = await getCache(responseCacheKey);
+    if (cachedResponse) {
+      return res.json(cachedResponse);
     }
 
     // Verify Firebase token
@@ -140,7 +149,7 @@ export const firebaseAuth = async (req, res) => {
 
     const token = generateToken(user);
 
-    return res.json({
+    const responsePayload = {
       message: "Authentication successful",
       token,
       user: {
@@ -155,7 +164,10 @@ export const firebaseAuth = async (req, res) => {
         name: m.organization.name,
         role: m.role
       }))
-    });
+    };
+
+    await setCache(responseCacheKey, responsePayload, FIREBASE_LOGIN_CACHE_TTL_MS);
+    return res.json(responsePayload);
   } catch (err) {
     console.error("Firebase auth error:", err);
     return res

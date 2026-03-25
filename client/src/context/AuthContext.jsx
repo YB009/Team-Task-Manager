@@ -1,7 +1,7 @@
 // client/src/context/AuthContext.jsx
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { auth } from "../api/firebase";
-import { getRedirectResult, onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { loginWithFirebase } from "../api/authApi";
 import { acceptTeamInvite } from "../api/teamApi";
 import axios from "../api/axiosInstance";
@@ -12,17 +12,52 @@ axios.defaults.withCredentials = true;
 const INVITE_STORAGE_KEY = "ttm_invite_token";
 const ACTIVE_ORG_STORAGE_KEY = "ttm_active_org";
 const AVATAR_STORAGE_KEY = "ttm_avatar_url";
+const AUTH_CACHE_STORAGE_KEY = "ttm_auth_cache";
 
 const AuthContext = createContext(null);
 
+const readAuthCache = () => {
+  try {
+    const raw = localStorage.getItem(AUTH_CACHE_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeAuthCache = (value) => {
+  try {
+    localStorage.setItem(AUTH_CACHE_STORAGE_KEY, JSON.stringify(value));
+  } catch {
+    // ignore storage failures
+  }
+};
+
+const clearAuthCache = () => {
+  try {
+    localStorage.removeItem(AUTH_CACHE_STORAGE_KEY);
+  } catch {
+    // ignore storage failures
+  }
+};
+
 export const AuthProvider = ({ children }) => {
-  const [firebaseUser, setFirebaseUser] = useState(null);
-  const [appUser, setAppUser] = useState(null); // user from our backend (Prisma)
-  const [token, setToken] = useState(null); // JWT from our backend
-  const [loading, setLoading] = useState(true);
-  const [organizations, setOrganizations] = useState([]);
-  const [hasOrganization, setHasOrganization] = useState(false);
-  const [bootstrapped, setBootstrapped] = useState(false);
+  const initialFirebaseUser = auth.currentUser || null;
+  const initialCache = readAuthCache();
+  const canUseInitialCache = Boolean(
+    initialFirebaseUser &&
+    initialCache?.firebaseUid === initialFirebaseUser.uid
+  );
+
+  const [firebaseUser, setFirebaseUser] = useState(initialFirebaseUser);
+  const [appUser, setAppUser] = useState(canUseInitialCache ? initialCache?.user || null : null); // user from our backend (Prisma)
+  const [token, setToken] = useState(canUseInitialCache ? initialCache?.token || null : null); // JWT from our backend
+  const [loading, setLoading] = useState(!canUseInitialCache);
+  const [organizations, setOrganizations] = useState(canUseInitialCache ? initialCache?.organizations || [] : []);
+  const [hasOrganization, setHasOrganization] = useState(
+    canUseInitialCache ? (initialCache?.organizations || []).length > 0 : false
+  );
+  const [bootstrapped, setBootstrapped] = useState(canUseInitialCache);
   const [avatarUrl, setAvatarUrl] = useState(
     () => localStorage.getItem(AVATAR_STORAGE_KEY) || ""
   );
@@ -67,6 +102,11 @@ export const AuthProvider = ({ children }) => {
     } else {
       localStorage.removeItem(AVATAR_STORAGE_KEY);
     }
+
+    const cached = readAuthCache();
+    if (cached) {
+      writeAuthCache({ ...cached, avatarUrl: next });
+    }
   }, []);
 
   const activeOrganization = useMemo(() => {
@@ -89,7 +129,6 @@ export const AuthProvider = ({ children }) => {
   // Watch Firebase auth state
   useEffect(() => {
     const syncUser = async (user) => {
-      setBootstrapped(false);
       if (!user) {
         setFirebaseUser(null);
         setAppUser(null);
@@ -97,12 +136,26 @@ export const AuthProvider = ({ children }) => {
         setMemberships([]);
         setProfileAvatarUrl("");
         localStorage.removeItem("ttm_token");
+        clearAuthCache();
         setLoading(false);
         setBootstrapped(true);
         return;
       }
 
       setFirebaseUser(user);
+      const cached = readAuthCache();
+      const canUseCachedState = cached?.firebaseUid === user.uid;
+
+      if (canUseCachedState) {
+        setAppUser(cached.user || null);
+        setToken(cached.token || null);
+        setMemberships(cached.organizations || []);
+        setLoading(false);
+        setBootstrapped(true);
+      } else {
+        setLoading(true);
+        setBootstrapped(false);
+      }
 
       // Get fresh Firebase ID token
       const idToken = await user.getIdToken();
@@ -113,13 +166,27 @@ export const AuthProvider = ({ children }) => {
         setAppUser(data.user);
         setMemberships(data.organizations || []);
         localStorage.setItem("ttm_token", data.token);
+        writeAuthCache({
+          firebaseUid: user.uid,
+          token: data.token,
+          user: data.user,
+          organizations: data.organizations || [],
+          avatarUrl: localStorage.getItem(AVATAR_STORAGE_KEY) || ""
+        });
 
         const inviteToken = localStorage.getItem(INVITE_STORAGE_KEY);
         if (inviteToken) {
           try {
             await acceptTeamInvite({ token: idToken, inviteToken });
             localStorage.removeItem(INVITE_STORAGE_KEY);
-            await refreshOrganizations(idToken);
+            const refreshedOrgs = await refreshOrganizations(idToken);
+            writeAuthCache({
+              firebaseUid: user.uid,
+              token: data.token,
+              user: data.user,
+              organizations: refreshedOrgs || [],
+              avatarUrl: localStorage.getItem(AVATAR_STORAGE_KEY) || ""
+            });
           } catch (inviteError) {
             console.error("Invite accept failed:", inviteError);
           }
@@ -131,17 +198,6 @@ export const AuthProvider = ({ children }) => {
         setBootstrapped(true);
       }
     };
-
-    // Always resolve any pending redirect result so auth state updates on any route.
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result?.user) {
-          syncUser(result.user);
-        }
-      })
-      .catch(() => {
-        // ignore; auth state listener will handle steady-state
-      });
 
     const unsub = onAuthStateChanged(auth, async (user) => {
       await syncUser(user);

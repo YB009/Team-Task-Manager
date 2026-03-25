@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { signInWithRedirect, signInWithEmailAndPassword, signInWithPopup, getRedirectResult } from "firebase/auth";
+import { signInWithRedirect, signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "../../components/Layout/AuthLayout.jsx";
 import {
@@ -45,14 +45,6 @@ export default function LoginPage() {
     return isIOS && isSafari;
   })();
   const isDesktop = !isMobile;
-
-  useEffect(() => {
-    getRedirectResult(auth).catch((err) => {
-      console.error("Redirect login error:", err);
-      setError(err.message || "Login failed");
-      sessionStorage.removeItem(redirectFlag);
-    });
-  }, []);
 
   useEffect(() => {
     if (!inAppBrowser) return;
