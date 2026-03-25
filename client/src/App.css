@@ -180,6 +180,24 @@
   cursor: pointer;
 }
 
+.btn-danger {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(220, 38, 38, 0.22);
+}
+
+.btn-danger:disabled,
+.btn-primary:disabled,
+.btn-ghost:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .page-stack {
   display: flex;
   flex-direction: column;
@@ -707,6 +725,12 @@
   border-top: 1px solid #eef1f6;
 }
 
+.task-danger-card {
+  gap: 14px;
+  border-color: #fecaca;
+  background: linear-gradient(180deg, #fff7f7 0%, #ffffff 100%);
+}
+
 .empty-state {
   background: #f8f9fc;
   border: 2px dashed #d1d5db;
@@ -1230,4 +1254,16 @@ body.drawer-open {
   overflow: hidden !important;
   position: fixed;
   width: 100%;
+}
+
+body.task-drawer-open .target-cursor {
+  mix-blend-mode: normal;
+}
+
+body.task-drawer-open .target-cursor-corner {
+  border-color: #111827;
+}
+
+body.task-drawer-open .target-cursor-dot {
+  background: #111827;
 }

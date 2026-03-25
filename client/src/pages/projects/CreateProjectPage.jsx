@@ -10,7 +10,6 @@ export default function CreateProjectPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("Active");
-  const [cover, setCover] = useState(null);
   const [coverPreview, setCoverPreview] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,7 +17,6 @@ export default function CreateProjectPage() {
   const handleFile = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setCover(file);
     const reader = new FileReader();
     reader.onload = () => setCoverPreview(reader.result);
     reader.readAsDataURL(file);

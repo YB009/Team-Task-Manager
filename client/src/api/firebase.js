@@ -45,12 +45,6 @@ const isIOS = (() => {
   return isIOSDevice || isIPadOS;
 })();
 
-const isSafari = (() => {
-  if (typeof navigator === "undefined") return false;
-  const ua = navigator.userAgent || "";
-  return /Safari/i.test(ua) && !/Chrome|CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua);
-})();
-
 // iOS browsers can be unreliable with IndexedDB after redirects; prefer localStorage on iOS.
 const preferredPersistence = isIOS ? browserLocalPersistence : indexedDBLocalPersistence;
 

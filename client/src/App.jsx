@@ -29,56 +29,55 @@ import { useProfile } from "./context/ProfileContext.jsx";
 import AppBackground from "./components/background/AppBackground.jsx";
 import TargetCursor from "./components/TargetCursor.jsx";
 
+const loadingStyle = {
+  minHeight: "100vh",
+  display: "grid",
+  placeItems: "center",
+  color: "#6b7280"
+};
+
 function App() {
   const { firebaseUser, loading, hasOrganization, bootstrapped } = useAuthContext();
   const location = useLocation();
   const { profileState, closeProfile } = useProfile();
 
   const guestRedirectPath = hasOrganization ? "/dashboard" : "/onboarding/organization";
+  const searchParams = new URLSearchParams(location.search);
+  const inviteToken = searchParams.get("token") || localStorage.getItem("ttm_invite_token");
 
-  const GuestLandingRoute = () => {
-    if (loading || !bootstrapped) {
-      return <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", color: "#6b7280" }}>Loading...</div>;
-    }
-    if (firebaseUser) {
-      return <Navigate to={guestRedirectPath} replace />;
-    }
-    return <LandingPage />;
-  };
+  const guestLandingElement =
+    loading || !bootstrapped
+      ? <div style={loadingStyle}>Loading...</div>
+      : firebaseUser
+        ? <Navigate to={guestRedirectPath} replace />
+        : <LandingPage />;
 
-  const ProtectedRoute = () => {
-    if (loading || !bootstrapped) {
-      return <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", color: "#6b7280" }}>Loading auth...</div>;
-    }
-    if (!firebaseUser) return <Navigate to="/login" replace />;
-    return <Outlet />;
-  };
+  const protectedElement =
+    loading || !bootstrapped
+      ? <div style={loadingStyle}>Loading auth...</div>
+      : firebaseUser
+        ? <Outlet />
+        : <Navigate to="/login" replace />;
 
-  const OrgGuard = () => {
-    if (loading || !bootstrapped) {
-      return <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", color: "#6b7280" }}>Loading workspace...</div>;
-    }
-    if (!hasOrganization) return <Navigate to="/onboarding/organization" replace />;
-    return <AppLayout />;
-  };
+  const onboardingElement =
+    loading || !bootstrapped
+      ? <div style={loadingStyle}>Loading...</div>
+      : !firebaseUser
+        ? <Navigate to="/login" replace />
+        : hasOrganization
+          ? <Navigate to="/dashboard" replace />
+          : <OrganizationOnboardingPage />;
 
-  const OnboardingGuard = () => {
-    if (loading || !bootstrapped) {
-      return <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", color: "#6b7280" }}>Loading...</div>;
-    }
-    if (!firebaseUser) return <Navigate to="/login" replace />;
-    if (hasOrganization) return <Navigate to="/dashboard" replace />;
-    return <OrganizationOnboardingPage />;
-  };
+  const orgGuardElement =
+    loading || !bootstrapped
+      ? <div style={loadingStyle}>Loading workspace...</div>
+      : hasOrganization
+        ? <AppLayout />
+        : <Navigate to="/onboarding/organization" replace />;
 
-  const AcceptInviteGuard = ({ children }) => {
-    const searchParams = new URLSearchParams(location.search);
-    const token = searchParams.get("token") || localStorage.getItem("ttm_invite_token");
-    if (!token) {
-      return <Navigate to={firebaseUser ? "/dashboard" : "/login"} replace />;
-    }
-    return children;
-  };
+  const acceptInviteElement = inviteToken
+    ? <AcceptInvitePage />
+    : <Navigate to={firebaseUser ? "/dashboard" : "/login"} replace />;
 
   return (
     <>
@@ -92,27 +91,20 @@ function App() {
       <AppBackground />
       <div className="app-surface">
       <Routes>
-        <Route path="/" element={<GuestLandingRoute />} />
-        <Route path="/landing" element={<GuestLandingRoute />} />
+        <Route path="/" element={guestLandingElement} />
+        <Route path="/landing" element={guestLandingElement} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/oauth/success" element={<OAuthSuccessPage />} />
-        <Route
-          path="/invite/accept"
-          element={
-            <AcceptInviteGuard>
-              <AcceptInvitePage />
-            </AcceptInviteGuard>
-          }
-        />
+        <Route path="/invite/accept" element={acceptInviteElement} />
 
         <Route
-          element={<ProtectedRoute />}
+          element={protectedElement}
         >
-          <Route path="/onboarding/organization" element={<OnboardingGuard />} />
+          <Route path="/onboarding/organization" element={onboardingElement} />
           <Route path="/organizations" element={<OrganizationOnboardingPage />} />
 
-          <Route path="/" element={<OrgGuard />}>
+          <Route path="/" element={orgGuardElement}>
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="dashboard-animated" element={<DashboardAnimated />} />
             <Route path="projects" element={<ProjectListPage />} />

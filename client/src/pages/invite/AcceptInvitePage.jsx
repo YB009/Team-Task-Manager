@@ -46,7 +46,7 @@ export default function AcceptInvitePage() {
     };
 
     acceptInvite();
-  }, [firebaseUser, inviteToken]);
+  }, [firebaseUser, inviteToken, refreshOrganizations]);
 
   const handleLogin = () => {
     navigate("/login");

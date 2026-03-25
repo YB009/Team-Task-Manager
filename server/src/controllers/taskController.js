@@ -476,3 +476,37 @@ export const removeTaskAttachment = async (req, res) => {
     res.status(500).json({ message: "Failed to remove attachment" });
   }
 };
+
+export const deleteTask = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+
+    const task = await prisma.task.findUnique({
+      where: { id: taskId },
+      include: { project: true }
+    });
+
+    if (!task) return res.status(404).json({ message: "Task not found" });
+    if (task.project.organizationId !== req.orgId) {
+      return res.status(403).json({ message: "Task not in this organization" });
+    }
+
+    const isPrivileged = req.membership.role === Roles.OWNER;
+    if (!isPrivileged) {
+      const allowed = await prisma.projectAccess.findFirst({
+        where: { userId: req.user.id, projectId: task.projectId }
+      });
+      if (!allowed) {
+        return res.status(403).json({ message: "No access to delete this task" });
+      }
+    }
+
+    await prisma.task.delete({ where: { id: taskId } });
+    await deleteByPrefix(`tasks:${req.orgId}`);
+
+    res.json({ message: "Task deleted" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to delete task" });
+  }
+};

@@ -31,6 +31,9 @@ const PillNav = ({
   const logoRef = useRef(null);
 
   useEffect(() => {
+    const timelines = tlRefs.current;
+    const activeTweens = activeTweenRefs.current;
+
     const layout = () => {
       circleRefs.current.forEach((circle) => {
         if (!circle?.parentElement) return;
@@ -119,8 +122,8 @@ const PillNav = ({
 
     return () => {
       window.removeEventListener("resize", onResize);
-      tlRefs.current.forEach((tl) => tl?.kill());
-      activeTweenRefs.current.forEach((tw) => tw?.kill());
+      timelines.forEach((tl) => tl?.kill());
+      activeTweens.forEach((tw) => tw?.kill());
       logoTweenRef.current?.kill();
     };
   }, [items, ease, initialLoadAnimation]);

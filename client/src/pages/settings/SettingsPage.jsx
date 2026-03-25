@@ -1,5 +1,5 @@
 import "./SettingsPage.css";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuthContext } from "../../context/AuthContext.jsx";
 import axios from "../../api/axiosInstance";
 import { useNavigate, useParams } from "react-router-dom";
@@ -176,7 +176,7 @@ export default function SettingsPage({ profileUserId, readOnly = false, invitePr
       }
     };
     load();
-  }, [firebaseUser, effectiveUserId, inviteProfile, user, activeOrganization]);
+  }, [firebaseUser, effectiveUserId, inviteProfile, user, activeOrganization, isSelf, setAvatarUrl]);
 
   const handleAvatarUpload = (file) => {
     if (!file) return;
@@ -216,13 +216,6 @@ export default function SettingsPage({ profileUserId, readOnly = false, invitePr
   const avatarFallback = firebaseUser?.photoURL || "";
   const avatarSrc = form.avatarUrl || avatarFallback;
   const showDrawerBack = typeof closeProfile === "function" && (profileUserId || readOnly || !isSelf);
-  const handleBack = () => {
-    if (typeof closeProfile === "function") {
-      closeProfile();
-      return;
-    }
-    navigate(-1);
-  };
 
   if (loading) {
     return <div className="page-stack"><div className="muted">Loading profile...</div></div>;

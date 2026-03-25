@@ -1,5 +1,5 @@
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "../../App.css";
 import axios from "../../api/axiosInstance";
 import { useAuthContext } from "../../context/AuthContext.jsx";
@@ -67,7 +67,7 @@ export default function ProjectDetailsPage() {
       }
     };
     load();
-  }, [firebaseUser, activeOrganization, projectIdFromQuery]);
+  }, [firebaseUser, activeOrganization, projectIdFromQuery, project]);
 
   useEffect(() => {
     const loadMembers = async () => {
@@ -83,14 +83,6 @@ export default function ProjectDetailsPage() {
     };
     loadMembers();
   }, [firebaseUser, activeOrganization]);
-
-  const calendarItems = useMemo(() => {
-    return tasks.map((t, idx) => ({
-      ...t,
-      day: (idx % 7) + 12,
-      lane: normalizeStatus(t.status)
-    }));
-  }, [tasks]);
 
   return (
     <div className="page-stack">

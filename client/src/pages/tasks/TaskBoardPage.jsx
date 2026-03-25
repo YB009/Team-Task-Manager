@@ -34,7 +34,6 @@ export default function TaskBoardPage() {
   const [activeTask, setActiveTask] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
   const [dragging, setDragging] = useState(null);
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -92,14 +91,11 @@ export default function TaskBoardPage() {
   const persistStatus = async (taskId, statusValue) => {
     if (!activeOrganization || !firebaseUser) return;
     try {
-      setSaving(true);
       const headers = { Authorization: `Bearer ${await firebaseUser.getIdToken()}` };
       await axios.patch(`/api/tasks/org/${activeOrganization.id}/${taskId}`, { status: statusValue }, { headers });
     } catch (err) {
       console.error(err);
       setError("Failed to update task status.");
-    } finally {
-      setSaving(false);
     }
   };
 

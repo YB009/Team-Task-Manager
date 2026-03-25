@@ -61,6 +61,7 @@ export default function TaskDetailDrawer({
   onAssigneesChange,
   onAttachmentsChange,
   onDueDateChange,
+  onDelete,
   members = []
 }) {
   const { firebaseUser, activeOrganization } = useAuthContext();
@@ -69,6 +70,7 @@ export default function TaskDetailDrawer({
   const [attachments, setAttachments] = useState([]);
   const [descriptionText, setDescriptionText] = useState("");
   const [savingDescription, setSavingDescription] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [editingObjectiveId, setEditingObjectiveId] = useState(null);
   const [editingObjectiveText, setEditingObjectiveText] = useState("");
   const [editingCommentId, setEditingCommentId] = useState(null);
@@ -83,18 +85,20 @@ export default function TaskDetailDrawer({
 
   // Stop Lenis smooth scroll when drawer is open
   useEffect(() => {
-    if (lenis && task) {
-      lenis.stop();
-      // Disable scroll on body to prevent background scrolling
-      document.body.style.overflow = 'hidden';
+    if (task) {
+      if (lenis) {
+        lenis.stop();
+      }
+      document.body.classList.add("drawer-open", "task-drawer-open");
+      document.body.style.overflow = "hidden";
     }
 
     return () => {
-      if (lenis) {
+      if (lenis && task) {
         lenis.start();
-        // Re-enable scroll on body
-        document.body.style.overflow = '';
       }
+      document.body.classList.remove("drawer-open", "task-drawer-open");
+      document.body.style.overflow = "";
     };
   }, [lenis, task]);
 
@@ -537,6 +541,35 @@ export default function TaskDetailDrawer({
             />
           </div>
         </div>
+
+        {onDelete && (
+          <div className="task-panel__section task-danger-card">
+            <div className="task-section-title">
+              <span>Danger zone</span>
+            </div>
+            <p className="muted" style={{ margin: 0 }}>
+              Remove this task permanently from the project.
+            </p>
+            <button
+              className="btn-danger"
+              type="button"
+              disabled={deleting}
+              onClick={async () => {
+                if (deleting) return;
+                const confirmed = window.confirm(`Delete "${task.title}"? This cannot be undone.`);
+                if (!confirmed) return;
+                try {
+                  setDeleting(true);
+                  await onDelete(task);
+                } finally {
+                  setDeleting(false);
+                }
+              }}
+            >
+              {deleting ? "Deleting..." : "Delete task"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

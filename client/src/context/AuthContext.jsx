@@ -1,5 +1,5 @@
 // client/src/context/AuthContext.jsx
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { auth } from "../api/firebase";
 import { getRedirectResult, onAuthStateChanged, signOut } from "firebase/auth";
 import { loginWithFirebase } from "../api/authApi";
@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
     () => localStorage.getItem(ACTIVE_ORG_STORAGE_KEY) || ""
   );
 
-  const setMemberships = (orgs = []) => {
+  const setMemberships = useCallback((orgs = []) => {
     const list = Array.isArray(orgs) ? orgs : [];
     setOrganizations(list);
     setHasOrganization(list.length > 0);
@@ -47,9 +47,9 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem(ACTIVE_ORG_STORAGE_KEY, fallbackId);
       }
     }
-  };
+  }, [activeOrgId]);
 
-  const setActiveOrganization = (orgId) => {
+  const setActiveOrganization = useCallback((orgId) => {
     const next = String(orgId || "");
     setActiveOrgId(next);
     if (next) {
@@ -57,9 +57,9 @@ export const AuthProvider = ({ children }) => {
     } else {
       localStorage.removeItem(ACTIVE_ORG_STORAGE_KEY);
     }
-  };
+  }, []);
 
-  const setProfileAvatarUrl = (nextUrl) => {
+  const setProfileAvatarUrl = useCallback((nextUrl) => {
     const next = String(nextUrl || "");
     setAvatarUrl(next);
     if (next) {
@@ -67,7 +67,7 @@ export const AuthProvider = ({ children }) => {
     } else {
       localStorage.removeItem(AVATAR_STORAGE_KEY);
     }
-  };
+  }, []);
 
   const activeOrganization = useMemo(() => {
     if (!organizations.length) return null;
@@ -75,7 +75,7 @@ export const AuthProvider = ({ children }) => {
     return found || organizations[0] || null;
   }, [activeOrgId, organizations]);
 
-  const refreshOrganizations = async (idTokenOverride) => {
+  const refreshOrganizations = useCallback(async (idTokenOverride) => {
     if (!firebaseUser && !idTokenOverride) return [];
     const authToken = idTokenOverride || (await firebaseUser.getIdToken());
     const res = await axios.get("/api/orgs", {
@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }) => {
     const orgs = res.data || [];
     setMemberships(orgs);
     return orgs;
-  };
+  }, [firebaseUser, setMemberships]);
 
   // Watch Firebase auth state
   useEffect(() => {
@@ -148,7 +148,7 @@ export const AuthProvider = ({ children }) => {
     });
 
     return () => unsub();
-  }, []);
+  }, [refreshOrganizations, setMemberships, setProfileAvatarUrl]);
 
   const logout = async () => {
     await signOut(auth);

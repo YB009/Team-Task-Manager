@@ -4,13 +4,13 @@ import "./TeamPage.css";
 export default function ProjectAccessModal({ open, member, projects, onClose, onSave }) {
   const initial = useMemo(() => {
     return new Set(member?.projectIds || []);
-  }, [member?.id, member?.projectIds]);
+  }, [member?.projectIds]);
   const [selection, setSelection] = useState(initial);
 
   useEffect(() => {
     if (!open || !member) return;
     setSelection(new Set(member?.projectIds || []));
-  }, [open, member?.id, member?.projectIds]);
+  }, [open, member]);
 
   if (!open || !member) return null;
 

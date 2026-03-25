@@ -206,6 +206,20 @@ export default function AllTasksPage() {
           );
           setActiveTask((t) => (t ? { ...t, attachments: nextAttachments } : t));
         }}
+        onDelete={async (taskToDelete) => {
+          if (!activeOrganization || !firebaseUser || !taskToDelete?.id) return;
+          try {
+            setError("");
+            const headers = { Authorization: `Bearer ${await firebaseUser.getIdToken()}` };
+            await axios.delete(`/api/tasks/org/${activeOrganization.id}/${taskToDelete.id}`, { headers });
+            setTasks((prev) => prev.filter((task) => task.id !== taskToDelete.id));
+            setActiveTask(null);
+          } catch (err) {
+            console.error(err);
+            setError("Failed to delete task.");
+            throw err;
+          }
+        }}
       />
 
       <CreateTaskDrawer

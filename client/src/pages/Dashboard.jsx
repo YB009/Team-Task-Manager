@@ -122,7 +122,7 @@ export default function Dashboard() {
       setIsFetching(false);
       inflightRef.current = false;
     }
-  }, [firebaseUser, hasRetriedAuth, activeOrganization]);
+  }, [firebaseUser, hasRetriedAuth, activeOrganization, projects.length, tasks.length]);
 
   useEffect(() => {
     loadDashboard();
@@ -190,7 +190,7 @@ export default function Dashboard() {
           .some((val) => String(val).toLowerCase().includes(term))
       )
       .slice(0, 8);
-  }, [projects, debouncedQuery, tasks, user]);
+  }, [projects, debouncedQuery, tasks]);
 
   const activityFeed = useMemo(() => {
     const events = [];

@@ -5,7 +5,7 @@ import axios from "../../api/axiosInstance";
 import { useAuthContext } from "../../context/AuthContext.jsx";
 
 export default function EditProjectPage() {
-  const { firebaseUser } = useAuthContext();
+  const { firebaseUser, activeOrganization } = useAuthContext();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -16,19 +16,16 @@ export default function EditProjectPage() {
   const [description, setDescription] = useState(projectFromState?.description || "");
   const [status, setStatus] = useState(projectFromState?.status || "Active");
   const [coverPreview, setCoverPreview] = useState(projectFromState?.coverImage || "");
-  const [coverImage, setCoverImage] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const load = async () => {
-      if (!firebaseUser || projectFromState || !projectId) return;
+      if (!firebaseUser || projectFromState || !projectId || !activeOrganization) return;
       try {
         const headers = { Authorization: `Bearer ${await firebaseUser.getIdToken()}` };
-        const orgRes = await axios.get("/api/orgs", { headers });
-        const org = orgRes.data?.[0];
-        if (!org) return;
-        const projRes = await axios.get(`/api/projects/org/${org.id}`, { headers });
+        const projRes = await axios.get(`/api/projects/org/${activeOrganization.id}`, { headers });
         const found = (projRes.data || []).find((p) => p.id === projectId);
         if (found) {
           setName(found.name);
@@ -41,12 +38,11 @@ export default function EditProjectPage() {
       }
     };
     load();
-  }, [firebaseUser, projectFromState, projectId]);
+  }, [firebaseUser, projectFromState, projectId, activeOrganization]);
 
   const handleFile = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setCoverImage(file);
     const reader = new FileReader();
     reader.onload = () => setCoverPreview(reader.result);
     reader.readAsDataURL(file);
@@ -54,30 +50,43 @@ export default function EditProjectPage() {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!firebaseUser || !projectId) return;
+    if (!firebaseUser || !projectId || !activeOrganization) return;
     setError("");
     setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${await firebaseUser.getIdToken()}` };
-      const orgRes = await axios.get("/api/orgs", { headers });
-      const org = orgRes.data?.[0];
-      if (!org) {
-        setError("Join or create an organization first.");
-        return;
-      }
       const payload = {
         name,
         description,
         status,
         coverImage: coverPreview || null
       };
-      await axios.put(`/api/projects/org/${org.id}/projects/${projectId}`, payload, { headers });
+      await axios.put(`/api/projects/org/${activeOrganization.id}/projects/${projectId}`, payload, { headers });
       navigate(`/projects/details?id=${projectId}`);
     } catch (err) {
       console.error(err);
       setError("Failed to update project.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!firebaseUser || !projectId || !activeOrganization || deleting) return;
+    const confirmed = window.confirm(`Delete "${name || "this project"}"? This cannot be undone.`);
+    if (!confirmed) return;
+
+    setError("");
+    setDeleting(true);
+    try {
+      const headers = { Authorization: `Bearer ${await firebaseUser.getIdToken()}` };
+      await axios.delete(`/api/projects/org/${activeOrganization.id}/projects/${projectId}`, { headers });
+      navigate("/projects");
+    } catch (err) {
+      console.error(err);
+      setError("Failed to delete project.");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -118,12 +127,15 @@ export default function EditProjectPage() {
             </label>
           </div>
           {error && <div className="error-banner">{error}</div>}
-          <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+          <div style={{ display: "flex", gap: 10, marginTop: 4, flexWrap: "wrap" }}>
             <button type="button" className="btn-ghost" onClick={() => navigate(-1)}>
               Cancel
             </button>
             <button type="submit" className="btn-primary" disabled={loading}>
               {loading ? "Saving..." : "Save changes"}
+            </button>
+            <button type="button" className="btn-danger" onClick={handleDelete} disabled={deleting}>
+              {deleting ? "Deleting..." : "Delete project"}
             </button>
           </div>
         </form>

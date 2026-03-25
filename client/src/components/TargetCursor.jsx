@@ -272,10 +272,10 @@ const TargetCursor = ({
   if (isMobile) return null;
 
   return (
-    <div ref={cursorRef} className="fixed left-0 top-0 z-[9999] h-0 w-0 pointer-events-none mix-blend-difference" style={{ willChange: "transform" }}>
+    <div ref={cursorRef} className="target-cursor fixed left-0 top-0 z-[9999] h-0 w-0 pointer-events-none mix-blend-difference" style={{ willChange: "transform" }}>
       <div
         ref={dotRef}
-        className="absolute left-1/2 top-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
+        className="target-cursor-dot absolute left-1/2 top-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
         style={{ willChange: "transform" }}
       />
       <div

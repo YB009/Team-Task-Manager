@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../context/AuthContext.jsx";
 import { auth } from "../../api/firebase";
@@ -97,11 +97,11 @@ export default function OAuthSuccessPage() {
     }
   }, [firebaseUser, loading, bootstrapped, navigate]);
 
-  const handleContinue = () => {
+  const handleContinue = useCallback(() => {
     if (document.hidden) return;
     if (!readyToRedirect) return;
     navigate("/dashboard", { replace: true });
-  };
+  }, [navigate, readyToRedirect]);
 
   useEffect(() => {
     if (!readyToRedirect) return;
@@ -114,7 +114,7 @@ export default function OAuthSuccessPage() {
         clearTimeout(idleTimerRef.current);
       }
     };
-  }, [readyToRedirect]);
+  }, [handleContinue, readyToRedirect]);
 
   return (
     <div className="antigravity-bg">
