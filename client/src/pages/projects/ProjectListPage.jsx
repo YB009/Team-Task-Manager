@@ -6,7 +6,7 @@ import { useAuthContext } from "../../context/AuthContext.jsx";
 import axios from "../../api/axiosInstance";
 
 export default function ProjectListPage() {
-  const { firebaseUser } = useAuthContext();
+  const { firebaseUser, activeOrganization } = useAuthContext();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [projects, setProjects] = useState([]);
@@ -21,16 +21,14 @@ export default function ProjectListPage() {
       setError("");
       try {
         const headers = { Authorization: `Bearer ${await firebaseUser.getIdToken()}` };
-        const orgRes = await axios.get("/api/orgs", { headers });
-        const org = orgRes.data?.[0];
-        if (!org) {
+        if (!activeOrganization) {
           setProjects([]);
           setTasks([]);
           return;
         }
         const [projRes, taskRes] = await Promise.all([
-          axios.get(`/api/projects/org/${org.id}`, { headers }),
-          axios.get(`/api/tasks/org/${org.id}`, { headers })
+          axios.get(`/api/projects/org/${activeOrganization.id}`, { headers }),
+          axios.get(`/api/tasks/org/${activeOrganization.id}`, { headers })
         ]);
         setProjects(projRes.data || []);
         setTasks(taskRes.data || []);
@@ -42,7 +40,7 @@ export default function ProjectListPage() {
       }
     };
     load();
-  }, [firebaseUser]);
+  }, [firebaseUser, activeOrganization]);
 
   const enhancedProjects = useMemo(() => {
     const taskByProject = tasks.reduce((acc, t) => {

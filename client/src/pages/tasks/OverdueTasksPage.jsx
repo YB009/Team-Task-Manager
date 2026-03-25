@@ -153,6 +153,18 @@ export default function OverdueTasksPage() {
         onClose={() => setActiveTask(null)}
         showBack
         onBack={() => setActiveTask(null)}
+        onDelete={async (taskToDelete) => {
+          if (!activeOrganization || !firebaseUser || !taskToDelete?.id) return;
+          try {
+            const headers = { Authorization: `Bearer ${await firebaseUser.getIdToken()}` };
+            await axios.delete(`/api/tasks/org/${activeOrganization.id}/${taskToDelete.id}`, { headers });
+            window.location.reload();
+          } catch (err) {
+            console.error(err);
+            setError("Failed to delete task.");
+            throw err;
+          }
+        }}
         members={members}
         onDescriptionChange={(nextDescription) => {
           if (!activeTask) return;

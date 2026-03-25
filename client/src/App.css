@@ -1225,6 +1225,10 @@ body.oauth-success {
   overflow-y: auto !important;
 }
 
+.target-cursor {
+  z-index: 10010 !important;
+}
+
 @supports (height: 100dvh) {
   .drawer,
   .drawer-panel {

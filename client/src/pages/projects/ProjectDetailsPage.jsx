@@ -23,21 +23,24 @@ export default function ProjectDetailsPage() {
   const [searchParams] = useSearchParams();
   const { firebaseUser, activeOrganization } = useAuthContext();
 
-  const [project, setProject] = useState(location.state?.project || null);
-  const [tasks, setTasks] = useState(location.state?.tasks || []);
+  const initialProject = location.state?.project || null;
+  const initialTasks = location.state?.tasks || [];
+  const [project, setProject] = useState(initialProject);
+  const [tasks, setTasks] = useState(initialTasks);
   const [view, setView] = useState("kanban");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialProject);
   const [activeTask, setActiveTask] = useState(null);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [members, setMembers] = useState([]);
   const projectIdFromQuery = searchParams.get("id");
   const inflightRef = useRef(false);
+  const hydratedFromStateRef = useRef(Boolean(initialProject));
 
   useEffect(() => {
     const load = async () => {
       if (!firebaseUser || inflightRef.current) return;
-      if (!projectIdFromQuery && project) {
+      if (!projectIdFromQuery && initialProject) {
         setLoading(false);
         return;
       }
@@ -48,26 +51,41 @@ export default function ProjectDetailsPage() {
       inflightRef.current = true;
       setError("");
       try {
-        setLoading(true);
+        if (!hydratedFromStateRef.current) {
+          setLoading(true);
+        }
         const headers = { Authorization: `Bearer ${await firebaseUser.getIdToken()}` };
-        const [projRes, taskRes] = await Promise.all([
+        const [projRes, taskRes] = await Promise.allSettled([
           axios.get(`/api/projects/org/${activeOrganization.id}`, { headers }),
           axios.get(`/api/tasks/org/${activeOrganization.id}`, { headers })
         ]);
-        const list = projRes.data || [];
-        const match = list.find((p) => p.id === projectIdFromQuery) || list[0] || null;
-        setProject(match);
-        setTasks((taskRes.data || []).filter((t) => !match || t.projectId === match.id));
-      } catch (err) {
-        console.error(err);
-        setError("Couldn't load project details.");
+
+        let match = initialProject;
+
+        if (projRes.status === "fulfilled") {
+          const list = projRes.value.data || [];
+          match = list.find((p) => p.id === projectIdFromQuery) || list[0] || null;
+          setProject(match);
+        } else {
+          console.error("Project fetch failed", projRes.reason);
+          setError("Project data is taking too long to load.");
+        }
+
+        if (taskRes.status === "fulfilled") {
+          setTasks((taskRes.value.data || []).filter((t) => !match || t.projectId === match.id));
+        } else {
+          console.error("Task fetch failed for project details", taskRes.reason);
+          setError((prev) => prev || "Task data is taking too long to load.");
+        }
+
+        hydratedFromStateRef.current = false;
       } finally {
         setLoading(false);
         inflightRef.current = false;
       }
     };
     load();
-  }, [firebaseUser, activeOrganization, projectIdFromQuery, project]);
+  }, [firebaseUser, activeOrganization, projectIdFromQuery, initialProject]);
 
   useEffect(() => {
     const loadMembers = async () => {
