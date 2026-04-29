@@ -13,6 +13,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@bugsense/bugsense-js": "file:../../Bugsense/packages/bugsense-js",
     "@react-three/fiber": "^9.5.0",
     "@remix-run/router": "^1.23.1",
     "@vitejs/plugin-react": "^5.1.2",

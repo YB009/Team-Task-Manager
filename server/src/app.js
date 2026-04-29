@@ -17,6 +17,7 @@ import teamRoutes from "./routes/teamRoutes.js";
 import billingRoutes from "./routes/billingRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import { bugsense } from "./utils/bugsense.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,14 +48,26 @@ const allowedOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(",").map((origin) => origin.trim().replace(/\/$/, ""))
   : [
       process.env.CLIENT_URL || "http://localhost:5173",
+      "http://127.0.0.1:4173",
+      "http://127.0.0.1:5173",
       "http://localhost:5173",
       "http://localhost:4173",
       "https://team-task-manager-p15t.onrender.com",
     ];
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const normalizedOrigin = origin.replace(/\/$/, "");
+    if (allowedOrigins.includes(normalizedOrigin)) return callback(null, true);
+    if (/^https?:\/\/(localhost|127\.0\.0\.1):\d+$/.test(normalizedOrigin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS blocked origin: ${origin}`));
+  },
   credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
 app.use(
@@ -85,6 +98,34 @@ app.use("/api/users", userRoutes);
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
+});
+
+app.use((err, req, res, next) => {
+  if (!err) {
+    return next();
+  }
+
+  void bugsense?.captureException(err, {
+    tags: {
+      source: "express-error-handler",
+      method: req.method,
+      route: req.originalUrl || req.url,
+    },
+    metadata: {
+      userId: req.user?.id,
+      organizationId: req.organization?.id,
+      statusCode: err.status || err.statusCode || 500,
+    },
+  });
+
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  const statusCode = err.status || err.statusCode || 500;
+  res.status(statusCode).json({
+    message: statusCode >= 500 ? "Internal server error" : err.message,
+  });
 });
 
 const clientDistPath = path.join(__dirname, "../../client/dist");

@@ -5,6 +5,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { loginWithFirebase } from "../api/authApi";
 import { acceptTeamInvite } from "../api/teamApi";
 import axios from "../api/axiosInstance";
+import { bugsense } from "../utils/bugsense.js";
 
 // Fix for Safari/Mobile: Ensure cookies are sent with requests
 axios.defaults.withCredentials = true;
@@ -114,6 +115,18 @@ export const AuthProvider = ({ children }) => {
     const found = organizations.find((org) => org.id === activeOrgId);
     return found || organizations[0] || null;
   }, [activeOrgId, organizations]);
+
+  useEffect(() => {
+    if (!bugsense) return;
+
+    bugsense.setUser(appUser || null);
+    bugsense.setTags({
+      workspace: "workvite",
+      organizationId: activeOrganization?.id,
+      organizationName: activeOrganization?.name,
+      plan: activeOrganization?.plan,
+    });
+  }, [activeOrganization, appUser]);
 
   const refreshOrganizations = useCallback(async (idTokenOverride) => {
     if (!firebaseUser && !idTokenOverride) return [];

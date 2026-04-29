@@ -28,6 +28,7 @@ import Drawer from "./components/ui/Drawer.jsx";
 import { useProfile } from "./context/ProfileContext.jsx";
 import AppBackground from "./components/background/AppBackground.jsx";
 import TargetCursor from "./components/TargetCursor.jsx";
+import { BugSenseBootstrap } from "./components/BugSenseBootstrap.jsx";
 
 const loadingStyle = {
   minHeight: "100vh",
@@ -81,6 +82,7 @@ function App() {
 
   return (
     <>
+      <BugSenseBootstrap />
       <TargetCursor
         targetSelector="a,button,[role='button'],input,textarea,select,.cursor-target"
         spinDuration={2}

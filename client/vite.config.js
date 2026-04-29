@@ -7,6 +7,13 @@ export default defineConfig({
   server: {
     port: 4173,
     strictPort: false,
+    proxy: {
+      "/api": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
     headers: {
       "Cross-Origin-Opener-Policy": "unsafe-none",
       "Cross-Origin-Embedder-Policy": "unsafe-none"
@@ -14,6 +21,7 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
+    sourcemap: true,
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
