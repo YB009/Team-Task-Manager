@@ -33,6 +33,44 @@ if (!process.env.FIREBASE_SERVICE_ACCOUNT &&
   console.error("CRITICAL: Firebase credentials missing from environment variables!");
 }
 
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(",").map((origin) => origin.trim().replace(/\/$/, ""))
+  : [];
+
+const defaultAllowedOrigins = [
+  process.env.CLIENT_URL || "http://localhost:5173",
+  "http://127.0.0.1:4173",
+  "http://127.0.0.1:5173",
+  "http://localhost:5173",
+  "http://localhost:4173",
+  "https://workvite.vercel.app",
+  "https://team-task-manager-p15t.onrender.com",
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const normalizedOrigin = origin.replace(/\/$/, "");
+    if ([...allowedOrigins, ...defaultAllowedOrigins].includes(normalizedOrigin)) {
+      return callback(null, true);
+    }
+    if (/^https?:\/\/(localhost|127\.0\.0\.1):\d+$/.test(normalizedOrigin)) {
+      return callback(null, true);
+    }
+    if (/^https:\/\/workvite(?:-[a-z0-9-]+)?\.vercel\.app$/i.test(normalizedOrigin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS blocked origin: ${origin}`));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+// CORS must run before body parsing/routes so browser preflights never hit auth handlers.
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(morgan("dev"));
@@ -43,32 +81,6 @@ app.use((req, res, next) => {
   res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
   next();
 });
-
-const allowedOrigins = process.env.FRONTEND_URL
-  ? process.env.FRONTEND_URL.split(",").map((origin) => origin.trim().replace(/\/$/, ""))
-  : [
-      process.env.CLIENT_URL || "http://localhost:5173",
-      "http://127.0.0.1:4173",
-      "http://127.0.0.1:5173",
-      "http://localhost:5173",
-      "http://localhost:4173",
-      "https://team-task-manager-p15t.onrender.com",
-    ];
-
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    const normalizedOrigin = origin.replace(/\/$/, "");
-    if (allowedOrigins.includes(normalizedOrigin)) return callback(null, true);
-    if (/^https?:\/\/(localhost|127\.0\.0\.1):\d+$/.test(normalizedOrigin)) {
-      return callback(null, true);
-    }
-    return callback(new Error(`CORS blocked origin: ${origin}`));
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
 
 app.use(
   session({

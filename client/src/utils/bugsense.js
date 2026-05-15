@@ -3,8 +3,9 @@ import { BugSense } from "@bugsense/bugsense-js";
 const endpoint = import.meta.env.VITE_BUGSENSE_ENDPOINT;
 const projectId = import.meta.env.VITE_BUGSENSE_PROJECT_ID;
 const apiKey = import.meta.env.VITE_BUGSENSE_API_KEY;
+const isEnabled = import.meta.env.VITE_BUGSENSE_ENABLED !== "false";
 
-const isConfigured = Boolean(endpoint && projectId && apiKey);
+const isConfigured = Boolean(isEnabled && endpoint && projectId && apiKey);
 let userContext = null;
 let globalTags = {
   workspace: "workvite",
